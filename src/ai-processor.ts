@@ -17,7 +17,7 @@ export async function processResumeWithAI(resumeText: string, env: Env): Promise
       messages: [
         {
           role: "system",
-          content: "You are an expert resume parser. Extract structured data from resumes and return valid JSON only. If you cannot extract a field, omit it from the response."
+          content: "You are an expert resume parser. Extract structured data and return valid JSON. Convert dates to YYYY-MM format."
         },
         {
           role: "user",
@@ -57,37 +57,24 @@ export async function processResumeWithAI(resumeText: string, env: Env): Promise
  */
 function createExtractionPrompt(resumeText: string): string {
   return `
-Extract the following information from this resume and return ONLY a valid JSON object:
+Parse this resume and return valid JSON:
 
-REQUIRED FIELDS:
-- desired_titles: Array of target job titles/roles
-- summary: Professional summary or objective
-- skills: Array of skills with levels (1-5) and types
-- experience: Array of work experiences with titles, dates, descriptions
-
-OPTIONAL FIELDS:
-- location_preference: Remote/hybrid/onsite preferences
-- schedule: Employment type (full_time, part_time, etc.)
-- salary_expectation: Salary info with currency and range
-- availability: When can start
-- links: Professional links (LinkedIn, GitHub, etc.)
-
-SKILL LEVELS: 1=Basic, 2=Limited, 3=Proficient, 4=Advanced, 5=Expert
-DATE FORMAT: Use YYYY-MM for dates, "present" for current positions
-
-EXAMPLE SKILL FORMAT:
 {
-  "name": "Python",
-  "level": 4,
-  "label": "advanced",
-  "type": "programming_language",
-  "notes": "5+ years experience"
+  "desired_titles": ["job titles wanted"],
+  "summary": "professional summary",
+  "skills": [{"name": "skill", "level": 1-5, "type": "programming_language"}],
+  "experience": [{"employer": "company", "title": "role", "start": "YYYY-MM", "end": "YYYY-MM", "description": "work done"}]
 }
 
-RESUME TEXT:
+Key rules:
+- Convert dates like "March 2022" to "2022-03"
+- Use "present" for current jobs
+- Skill levels: 1=Basic, 5=Expert
+
+Resume:
 ${resumeText}
 
-Return only valid JSON:`;
+JSON:`;
 }
 
 /**
@@ -111,9 +98,17 @@ function parseAIResponse(aiOutput: string): Partial<ResumeData> | null {
     // Parse and validate basic structure
     const parsed = JSON.parse(cleanJson);
     
-    // Ensure required fields are present
-    if (!parsed.desired_titles || !parsed.summary || !parsed.skills || !parsed.experience) {
-      console.warn('AI response missing required fields');
+    // Basic date normalization
+    if (parsed.experience && Array.isArray(parsed.experience)) {
+      parsed.experience = parsed.experience.map((exp: any) => {
+        if (exp.start && typeof exp.start === 'string') {
+          exp.start = normalizeDateFormat(exp.start);
+        }
+        if (exp.end && typeof exp.end === 'string' && exp.end.toLowerCase() !== 'present') {
+          exp.end = normalizeDateFormat(exp.end);
+        }
+        return exp;
+      });
     }
     
     return parsed as Partial<ResumeData>;
@@ -128,6 +123,44 @@ function parseAIResponse(aiOutput: string): Partial<ResumeData> | null {
 }
 
 /**
+ * Simple date format normalization
+ */
+function normalizeDateFormat(dateStr: string): string {
+  const cleaned = dateStr.trim().toLowerCase();
+  
+  // Already in correct format
+  if (/^\d{4}-\d{2}$/.test(cleaned)) {
+    return cleaned;
+  }
+  
+  // Handle "present" variants
+  if (cleaned === 'present' || cleaned === 'current') {
+    return 'present';
+  }
+  
+  // Convert "March 2022" to "2022-03"
+  const monthNames: { [key: string]: string } = {
+    'january': '01', 'jan': '01', 'february': '02', 'feb': '02',
+    'march': '03', 'mar': '03', 'april': '04', 'apr': '04',
+    'may': '05', 'june': '06', 'jun': '06', 'july': '07', 'jul': '07',
+    'august': '08', 'aug': '08', 'september': '09', 'sep': '09',
+    'october': '10', 'oct': '10', 'november': '11', 'nov': '11',
+    'december': '12', 'dec': '12'
+  };
+  
+  const monthYearMatch = cleaned.match(/([a-z]+)\s+(\d{4})/);
+  if (monthYearMatch && monthYearMatch.length > 2) {
+    const monthName = monthYearMatch[1];
+    const year = monthYearMatch[2];
+    if (monthName && year && monthNames[monthName]) {
+      return `${year}-${monthNames[monthName]}`;
+    }
+  }
+  
+  return dateStr;
+}
+
+/**
  * Identifies fields that couldn't be mapped from the original text
  */
 function findUnmappedFields(originalText: string, extractedData: Partial<ResumeData> | null): string[] {
@@ -138,57 +171,14 @@ function findUnmappedFields(originalText: string, extractedData: Partial<ResumeD
   }
   
   // Check for common resume sections that might not have been extracted
-  const commonSections = [
-    'education',
-    'certifications',
-    'projects',
-    'awards',
-    'languages',
-    'references',
-    'volunteer',
-    'publications'
-  ];
-  
+  const commonSections = ['education', 'certifications', 'projects', 'awards', 'languages'];
   const lowerCaseText = originalText.toLowerCase();
   
   commonSections.forEach(section => {
-    if (lowerCaseText.includes(section) && !hasRelatedField(extractedData, section)) {
+    if (lowerCaseText.includes(section)) {
       unmappedFields.push(section);
     }
   });
   
-  // Check for missing standard fields
-  if (!extractedData.desired_titles?.length) unmappedFields.push('desired_titles');
-  if (!extractedData.summary) unmappedFields.push('summary');
-  if (!extractedData.skills?.length) unmappedFields.push('skills');
-  if (!extractedData.experience?.length) unmappedFields.push('experience');
-  
   return unmappedFields;
-}
-
-/**
- * Checks if extracted data has fields related to a section
- */
-function hasRelatedField(data: Partial<ResumeData>, section: string): boolean {
-  switch (section) {
-    case 'education':
-      // No education field in schema, might be in experience or skills
-      return data.experience?.some(exp => 
-        exp.description?.toLowerCase().includes('education') ||
-        exp.title?.toLowerCase().includes('student')
-      ) || false;
-    
-    case 'languages':
-      return data.skills?.some(skill => 
-        typeof skill === 'object' && skill.type === 'spoken_language'
-      ) || false;
-    
-    case 'projects':
-      return data.experience?.some(exp =>
-        exp.description?.toLowerCase().includes('project')
-      ) || false;
-    
-    default:
-      return false;
-  }
 }

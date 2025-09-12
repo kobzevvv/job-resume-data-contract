@@ -170,7 +170,8 @@ async function handleProcessResume(request: Request, env: Env): Promise<Response
     });
     
     // Process resume with AI
-    const aiResult = await processResumeWithAI(requestData.resume_text, env);
+    const language = requestData.language || 'en';
+    const aiResult = await processResumeWithAI(requestData.resume_text, env, language);
     
     if (!aiResult.data) {
       return createErrorResponse(422, 'AI_PROCESSING_FAILED', 'Failed to extract resume data with AI');

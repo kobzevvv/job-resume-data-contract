@@ -66,23 +66,30 @@ async function testHealthEndpoint() {
 /**
  * Process a single resume and validate response
  */
-async function processResume(resumeFile, resumeText) {
-  console.log(`🧪 Testing Resume: ${resumeFile}\n`);
+async function processResume(resumeFile, resumeText, language = 'en') {
+  console.log(`🧪 Testing Resume: ${resumeFile} (Language: ${language})\n`);
   
   try {
     const startTime = Date.now();
+    const requestBody = {
+      resume_text: resumeText,
+      options: {
+        include_unmapped: true,
+        strict_validation: false
+      }
+    };
+    
+    // Add language parameter if not English
+    if (language !== 'en') {
+      requestBody.language = language;
+    }
+    
     const response = await fetch(`${WORKER_URL}/process-resume`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        resume_text: resumeText,
-        options: {
-          include_unmapped: true,
-          strict_validation: false
-        }
-      })
+      body: JSON.stringify(requestBody)
     });
     
     const processingTime = Date.now() - startTime;
@@ -224,6 +231,24 @@ async function testErrorHandling() {
 }
 
 /**
+ * Detect language from filename or content
+ */
+function detectLanguage(filename, content) {
+  // Check filename for language indicators
+  if (filename.includes('russian') || filename.includes('ru-')) {
+    return 'ru';
+  }
+  
+  // Check content for Cyrillic characters
+  const cyrillicPattern = /[а-яё]/i;
+  if (cyrillicPattern.test(content)) {
+    return 'ru';
+  }
+  
+  return 'en';
+}
+
+/**
  * Main test runner
  */
 async function runTests() {
@@ -244,7 +269,8 @@ async function runTests() {
     for (const resumeFile of resumeFiles) {
       const resumePath = join(SAMPLE_RESUMES_DIR, resumeFile);
       const resumeText = readFileSync(resumePath, 'utf8');
-      await processResume(resumeFile, resumeText);
+      const language = detectLanguage(resumeFile, resumeText);
+      await processResume(resumeFile, resumeText, language);
     }
   } catch (error) {
     logTest('Sample resumes directory accessible', false, error.message);

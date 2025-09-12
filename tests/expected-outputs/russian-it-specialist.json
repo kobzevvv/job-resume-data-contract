@@ -1,0 +1,71 @@
+{
+  "description": "Expected output patterns for russian-it-specialist.txt resume",
+  "language": "ru",
+  "validation_rules": {
+    "desired_titles": {
+      "should_contain": ["инженер", "техническая поддержка", "системный администратор"],
+      "min_items": 1
+    },
+    "summary": {
+      "should_contain": ["техническая поддержка", "системное администрирование", "опыт"],
+      "min_length": 50,
+      "language": "ru"
+    },
+    "skills": {
+      "min_items": 8,
+      "should_contain_skills": [
+        { "name_contains": "windows", "level": { "min": 3, "max": 5 } },
+        { "name_contains": "сети", "level": { "min": 3, "max": 5 } },
+        { "name_contains": "лвс", "level": { "min": 3, "max": 5 } },
+        { "name_contains": "администрирование", "level": { "min": 3, "max": 5 } },
+        { "name_contains": "настройка по", "level": { "min": 2, "max": 5 } },
+        { "name_contains": "active directory", "level": { "min": 2, "max": 5 } },
+        { "name_contains": "hyper-v", "level": { "min": 2, "max": 4 } }
+      ],
+      "language_skills": [
+        { "name_contains": "русский", "level": 5, "type": "spoken_language" },
+        { "name_contains": "английский", "level": 2, "type": "spoken_language" }
+      ]
+    },
+    "experience": {
+      "min_items": 4,
+      "required_fields": ["title", "start", "description"],
+      "should_have_recent": true,
+      "date_format": "YYYY-MM",
+      "current_job": {
+        "employer_contains": "коробков",
+        "title_contains": "инженер технической поддержки"
+      },
+      "total_experience_years": { "min": 10, "max": 12 }
+    },
+    "location_preference": {
+      "expected": true,
+      "should_contain": ["москва", "удаленная работа", "гибкий график"]
+    },
+    "salary_expectation": {
+      "expected": true,
+      "currency": "RUB",
+      "range": { "min": 80000, "max": 120000 },
+      "periodicity": "month"
+    },
+    "schedule": {
+      "expected_options": ["full_time", "part_time"]
+    }
+  },
+  "language_specific_validation": {
+    "all_text_in_russian": true,
+    "job_titles_in_russian": true,
+    "company_names_preserved": true,
+    "skills_in_russian": true,
+    "dates_normalized": true
+  },
+  "critical_extractions": [
+    "Must extract Russian job titles like 'Инженер технической поддержки'",
+    "Must identify 11+ years total experience",
+    "Must extract current employer as 'ИП Коробков'",
+    "Must identify salary as 100,000 RUB per month",
+    "Must extract technical skills in Russian",
+    "Must identify Moscow as location",
+    "Must extract language skills (Russian native, English A2)"
+  ]
+}

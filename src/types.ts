@@ -64,6 +64,7 @@ export interface ResumeData {
 // API request/response types
 export interface ProcessResumeRequest {
   resume_text: string;
+  language?: string; // ISO 639-1 code (e.g., 'en', 'ru', 'de') - defaults to 'en'
   options?: {
     include_unmapped?: boolean;
     strict_validation?: boolean;

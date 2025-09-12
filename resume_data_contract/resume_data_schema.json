@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.com/schemas/resume-contract.schema.json",
+  "title": "Resume Data Contract",
+  "type": "object",
+  "required": ["desired_titles", "summary", "skills", "experience"],
+  "additionalProperties": false,
+  "properties": {
+    "version": { "type": "string" },
+
+    "desired_titles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 },
+      "description": "Target role titles (e.g., ['Backend Engineer','Data Engineer'])."
+    },
+
+    "summary": { "type": "string", "minLength": 1 },
+
+    "skills": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Skill list with universal 1–5 proficiency.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "required": ["name", "level"],
+            "additionalProperties": false,
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "level": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 5,
+                "description": "1=Basic, 2=Limited, 3=Proficient, 4=Advanced, 5=Expert"
+              },
+              "label": {
+                "type": "string",
+                "enum": ["basic", "limited", "proficient", "advanced", "expert"],
+                "description": "Optional, human-readable label matching the numeric level."
+              },
+              "type": {
+                "type": "string",
+                "enum": ["programming_language", "spoken_language", "framework", "tool", "domain", "methodology", "soft_skill", "other"],
+                "description": "Optional categorization."
+              },
+              "notes": { "type": "string", "description": "Context or evidence (e.g., 'TOEFL C1', '3 yrs prod use')." }
+            }
+          },
+          {
+            "type": "string",
+            "minLength": 1,
+            "description": "Back-compat: a plain skill tag without a level."
+          }
+        ]
+      }
+    },
+
+    "experience": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["title", "start", "description"],
+        "additionalProperties": false,
+        "properties": {
+          "employer": { "type": "string" },
+          "title": { "type": "string", "minLength": 1 },
+          "start": {
+            "type": "string",
+            "pattern": "^\\d{4}-(0[1-9]|1[0-2])$",
+            "description": "YYYY-MM"
+          },
+          "end": {
+            "oneOf": [
+              { "type": "string", "pattern": "^\\d{4}-(0[1-9]|1[0-2])$" },
+              { "type": "string", "enum": ["present", "Present"] },
+              { "type": "null" }
+            ],
+            "description": "YYYY-MM, 'present', or null."
+          },
+          "description": { "type": "string", "minLength": 1 },
+          "location": { "type": "string", "description": "Freeform (e.g., 'Remote', 'Amsterdam, NL')." }
+        }
+      }
+    },
+
+    "location_preference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": { "type": "string", "enum": ["remote", "hybrid", "onsite"] },
+        "preferred_locations": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+
+    "schedule": {
+      "type": "string",
+      "enum": ["full_time", "part_time", "contract", "freelance", "internship", "temporary"]
+    },
+
+    "salary_expectation": {
+      "type": "object",
+      "required": ["currency", "periodicity"],
+      "additionalProperties": false,
+      "properties": {
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "periodicity": { "type": "string", "enum": ["year", "month", "day", "hour", "project"] },
+        "notes": { "type": "string" }
+      }
+    },
+
+    "availability": { "type": "string" },
+
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["label", "url"],
+        "additionalProperties": false,
+        "properties": {
+          "label": { "type": "string" },
+          "url": { "type": "string", "format": "uri" }
+        }
+      }
+    }
+  }
+}

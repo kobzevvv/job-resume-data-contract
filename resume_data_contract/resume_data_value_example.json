@@ -1,0 +1,39 @@
+{
+  "version": "1.1",
+  "desired_titles": ["Senior Backend Engineer", "Data Platform Engineer"],
+  "summary": "Backend/data engineer building resilient, scalable services and pipelines.",
+  "skills": [
+    { "name": "Go", "level": 4, "label": "advanced", "type": "programming_language", "notes": "4+ yrs prod" },
+    { "name": "PostgreSQL", "level": 4, "label": "advanced", "type": "tool" },
+    { "name": "Distributed Systems", "level": 3, "label": "proficient", "type": "domain" },
+    { "name": "English", "level": 5, "label": "expert", "type": "spoken_language", "notes": "C2" },
+    { "name": "Dutch", "level": 2, "label": "limited", "type": "spoken_language" },
+    "Docker"  // back-compat: plain tag (no level yet)
+  ],
+  "experience": [
+    {
+      "employer": "Acme Corp",
+      "title": "Senior Software Engineer",
+      "start": "2022-03",
+      "end": "present",
+      "description": "Led event-driven order processing platform (~50k msgs/min).",
+      "location": "Hybrid — Amsterdam, NL"
+    },
+    {
+      "employer": "Globex",
+      "title": "Software Engineer",
+      "start": "2019-01",
+      "end": "2022-02",
+      "description": "Built REST/gRPC services; optimized Postgres and CI/CD.",
+      "location": "Onsite — Berlin, DE"
+    }
+  ],
+  "location_preference": { "type": "remote", "preferred_locations": ["EU (CET±1)", "Amsterdam, NL"] },
+  "schedule": "full_time",
+  "salary_expectation": { "currency": "EUR", "min": 80000, "max": 95000, "periodicity": "year" },
+  "availability": "2 weeks notice",
+  "links": [
+    { "label": "LinkedIn", "url": "https://www.linkedin.com/in/example" },
+    { "label": "GitHub", "url": "https://github.com/example" }
+  ]
+}

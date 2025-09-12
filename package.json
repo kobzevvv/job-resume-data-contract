@@ -1,0 +1,27 @@
+{
+  "name": "resume-processor-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Cloudflare Worker that converts text resumes to structured JSON using AI",
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "wrangler dev --local",
+    "deploy": "wrangler deploy",
+    "deploy:staging": "wrangler deploy --env staging",
+    "deploy:prod": "wrangler deploy --env production",
+    "test": "node tests/test-runner.js",
+    "test:health": "curl -s $npm_config_worker_url/health | jq '.'",
+    "test:quick": "npm run test:health && echo 'Health check passed!'",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240512.0",
+    "typescript": "^5.4.5",
+    "wrangler": "^3.78.12"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+

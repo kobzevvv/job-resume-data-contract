@@ -1,0 +1,113 @@
+SARAH JOHNSON
+Data Platform Engineer
+
+📧 sarah.johnson@datamail.com
+📱 +1-555-987-6543  
+🏠 Austin, TX (Remote preferred)
+🔗 LinkedIn: linkedin.com/in/sarahjohnson
+💻 GitHub: github.com/sarah-data
+
+═══════════════════════════════════════════════════
+
+SUMMARY
+═══════════════════════════════════════════════════
+Data engineer with 6 years experience building robust ETL pipelines, data lakes, and analytics platforms. Expertise in Python, Spark, and cloud data technologies. Successfully scaled data infrastructure supporting 10+ data science teams and processing 100TB+ daily. Passionate about data quality, automation, and enabling data-driven decisions.
+
+═══════════════════════════════════════════════════
+
+PROFESSIONAL EXPERIENCE
+═══════════════════════════════════════════════════
+
+📊 Senior Data Engineer | DataTech Solutions | 2021-08 - Present
+   • Built real-time streaming pipelines processing 50M events/day using Apache Kafka and Spark
+   • Designed data lake architecture on AWS S3 with automated data cataloging
+   • Reduced data pipeline failures by 80% through comprehensive monitoring and alerting
+   • Led migration from legacy ETL to cloud-native solutions saving $200k annually
+   • Mentored 3 junior data engineers and established best practices documentation
+   • Stack: Python, Apache Spark, Kafka, Airflow, AWS (S3, EMR, Glue, Redshift)
+
+📈 Data Engineer | Analytics Corp | 2019-01 - 2021-07
+   • Developed batch ETL pipelines processing financial data from 20+ sources
+   • Built data validation framework ensuring 99.9% data quality metrics
+   • Created automated reporting system reducing manual work by 15 hours/week
+   • Optimized SQL queries and database schemas improving performance by 50%
+   • Implemented data governance policies and GDPR compliance measures
+   • Stack: Python, Pandas, PostgreSQL, Apache Airflow, Docker, GCP
+
+🔧 Junior Data Engineer | StartupData | 2018-06 - 2018-12
+   • Built web scraping system collecting 1M+ data points daily
+   • Developed REST API for data access with 99.99% uptime
+   • Created interactive dashboards using Tableau and D3.js
+   • Automated data quality checks reducing manual validation by 90%
+   • Stack: Python, Beautiful Soup, PostgreSQL, Flask, Tableau
+
+═══════════════════════════════════════════════════
+
+TECHNICAL SKILLS
+═══════════════════════════════════════════════════
+
+Programming Languages:
+• Python (Expert - 6+ years production experience)
+• SQL (Expert - Advanced query optimization and performance tuning)
+• Scala (Proficient - Spark applications and data processing)
+• R (Intermediate - Statistical analysis and data science support)
+
+Big Data & Streaming:
+• Apache Spark (Expert - Batch and streaming processing)
+• Apache Kafka (Advanced - Event streaming and real-time pipelines)
+• Apache Airflow (Advanced - Workflow orchestration and scheduling)
+• Hadoop ecosystem (Proficient - HDFS, Hive, HBase)
+
+Cloud Platforms:
+• AWS (Advanced - S3, EMR, Glue, Redshift, Lambda, EC2)
+• Google Cloud Platform (Intermediate - BigQuery, Dataflow, Pub/Sub)
+• Azure (Basic - Data Factory, Synapse Analytics)
+
+Databases:
+• PostgreSQL (Expert - Performance tuning, partitioning, replication)
+• Redshift (Advanced - Data warehousing and analytics)
+• MongoDB (Intermediate - Document databases and aggregation pipelines)
+• Cassandra (Basic - Distributed NoSQL systems)
+
+Tools & Frameworks:
+• Docker & Kubernetes (Advanced - Containerization and orchestration)
+• Git, GitHub Actions (Expert - Version control and CI/CD)
+• Terraform (Intermediate - Infrastructure as code)
+• Prometheus, Grafana (Monitoring and observability)
+
+═══════════════════════════════════════════════════
+
+EDUCATION & CERTIFICATIONS
+═══════════════════════════════════════════════════
+
+🎓 Master of Science in Data Science
+   Georgia Institute of Technology | 2016-2018
+   Specialization: Machine Learning and Big Data Analytics
+
+🎓 Bachelor of Science in Computer Engineering  
+   University of Texas at Austin | 2012-2016
+   Minor in Mathematics
+
+📜 AWS Certified Big Data - Specialty (2023)
+📜 Google Cloud Professional Data Engineer (2022)
+📜 Databricks Certified Associate Developer for Apache Spark (2021)
+
+═══════════════════════════════════════════════════
+
+PROJECTS & ACHIEVEMENTS
+═══════════════════════════════════════════════════
+
+🏆 Built company's first real-time fraud detection system processing 1M transactions/hour
+🏆 Designed data mesh architecture adopted across 5 business units
+🏆 Open source contributor to Apache Airflow (3 merged PRs)
+🏆 Speaker at PyCon 2023: "Building Resilient Data Pipelines"
+
+═══════════════════════════════════════════════════
+
+CAREER OBJECTIVES
+═══════════════════════════════════════════════════
+
+Seeking: Staff Data Engineer, Principal Data Engineer, or Data Architecture roles
+Work Preference: Remote-first or hybrid (Austin, TX area)
+Salary Range: $140,000 - $170,000 USD annually
+Timeline: Available with 3 weeks notice

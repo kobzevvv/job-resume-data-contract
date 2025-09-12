@@ -1,0 +1,54 @@
+{
+  "description": "Expected output patterns for senior-backend-engineer.txt resume",
+  "validation_rules": {
+    "desired_titles": {
+      "should_contain": ["engineer", "backend", "senior", "staff", "technical lead"],
+      "min_items": 1
+    },
+    "summary": {
+      "should_contain": ["backend", "engineer", "years", "experience"],
+      "min_length": 50
+    },
+    "skills": {
+      "min_items": 5,
+      "should_contain_skills": [
+        { "name_contains": "go", "level": { "min": 3, "max": 5 } },
+        { "name_contains": "python", "level": { "min": 3, "max": 5 } },
+        { "name_contains": "postgresql", "level": { "min": 2, "max": 5 } },
+        { "name_contains": "docker", "level": { "min": 2, "max": 5 } },
+        { "name_contains": "aws", "level": { "min": 2, "max": 5 } }
+      ]
+    },
+    "experience": {
+      "min_items": 2,
+      "required_fields": ["title", "start", "description"],
+      "should_have_recent": true,
+      "date_format": "YYYY-MM"
+    },
+    "location_preference": {
+      "expected": true,
+      "should_contain": ["remote", "hybrid", "san francisco"]
+    },
+    "salary_expectation": {
+      "expected": true,
+      "currency": "USD",
+      "range": { "min": 100000, "max": 250000 },
+      "periodicity": "year"
+    },
+    "schedule": {
+      "expected": "full_time"
+    },
+    "links": {
+      "expected": true,
+      "min_items": 1,
+      "should_contain_domains": ["linkedin.com", "github.com"]
+    }
+  },
+  "critical_extractions": [
+    "Must extract Go and Python as primary skills",
+    "Must identify 8+ years of experience",
+    "Must extract TechCorp as most recent employer",
+    "Must identify salary range $150k-180k",
+    "Must extract LinkedIn and GitHub links"
+  ]
+}

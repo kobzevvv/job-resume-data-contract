@@ -1,0 +1,275 @@
+name: Test and Deploy Resume Processor Worker
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Run tests daily at 9 AM UTC to catch any issues
+    - cron: '0 9 * * *'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - staging
+          - production
+
+env:
+  NODE_VERSION: '18'
+
+jobs:
+  # Type checking and linting
+  validate:
+    name: 🔍 Validate Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔧 TypeScript type check
+        run: npm run type-check
+
+      - name: 📋 Validate configuration files
+        run: |
+          # Validate wrangler.toml exists and has required fields
+          if [ ! -f "wrangler.toml" ]; then
+            echo "❌ wrangler.toml not found"
+            exit 1
+          fi
+          
+          # Validate package.json has required scripts
+          node -e "
+            const pkg = require('./package.json');
+            const requiredScripts = ['test', 'deploy', 'type-check'];
+            const missing = requiredScripts.filter(s => !pkg.scripts[s]);
+            if (missing.length) {
+              console.error('❌ Missing required scripts:', missing.join(', '));
+              process.exit(1);
+            }
+            console.log('✅ All required scripts present');
+          "
+
+  # Deploy to staging
+  deploy-staging:
+    name: 🚀 Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/develop' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging')
+    environment:
+      name: staging
+      url: https://resume-processor-staging.dev-a96.workers.dev
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Deploy to Cloudflare Workers (Staging)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env staging
+
+      - name: ⏱️ Wait for deployment
+        run: sleep 10
+
+      - name: 🧪 Run staging tests
+        env:
+          WORKER_URL: https://resume-processor-staging.dev-a96.workers.dev
+        run: npm test
+
+  # Deploy to production
+  deploy-production:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main' || (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    environment:
+      name: production
+      url: https://resume-processor-worker.dev-a96.workers.dev
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🚀 Deploy to Cloudflare Workers (Production)
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deploy --env production
+
+      - name: ⏱️ Wait for deployment
+        run: sleep 15
+
+      - name: 🧪 Run production tests
+        env:
+          WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
+        run: npm test
+
+  # Test existing deployment (for PRs and scheduled runs)
+  test-existing:
+    name: 🧪 Test Current Deployment
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'schedule'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🧪 Test health endpoint
+        run: |
+          curl -f https://resume-processor-worker.dev-a96.workers.dev/health || {
+            echo "❌ Health check failed"
+            exit 1
+          }
+
+      - name: 🧪 Run full test suite
+        env:
+          WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
+        run: npm test
+
+  # Performance and load testing
+  performance-test:
+    name: ⚡ Performance Tests
+    runs-on: ubuntu-latest
+    needs: [deploy-production]
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🟢 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: ⚡ Performance test
+        env:
+          WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
+        run: |
+          echo "🏃 Running performance tests..."
+          
+          # Test response times
+          for i in {1..3}; do
+            echo "Test run $i:"
+            time curl -s \
+              -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"resume_text":"'"$(head -c 1000 tests/sample-resumes/senior-backend-engineer.txt)"'"}' \
+              $WORKER_URL/process-resume > /dev/null
+            echo ""
+          done
+
+      - name: 📊 Load test (light)
+        env:
+          WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
+        run: |
+          echo "📊 Running light load test..."
+          
+          # Simple concurrent test
+          for i in {1..5}; do
+            curl -s -X POST \
+              -H "Content-Type: application/json" \
+              -d '{"resume_text":"Test resume for load testing. Software engineer with experience in development."}' \
+              $WORKER_URL/process-resume &
+          done
+          
+          wait
+          echo "✅ Load test completed"
+
+  # Notification on failure
+  notify-failure:
+    name: 📢 Notify on Failure
+    runs-on: ubuntu-latest
+    needs: [validate, deploy-staging, deploy-production, test-existing]
+    if: failure() && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    steps:
+      - name: 📢 Create failure issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = `🚨 CI/CD Pipeline Failed - ${context.workflow} - ${context.sha.substring(0, 7)}`;
+            const body = `
+            ## Pipeline Failure Report
+            
+            **Workflow:** ${context.workflow}
+            **Branch:** ${context.ref}
+            **Commit:** ${context.sha}
+            **Run:** https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
+            
+            **Failed Jobs:**
+            ${JSON.stringify(context.payload, null, 2)}
+            
+            Please investigate and fix the issues.
+            `;
+            
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['bug', 'ci-cd-failure', 'urgent']
+            });
+
+  # Clean up old deployments (runs monthly)
+  cleanup:
+    name: 🧹 Cleanup
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && github.ref == 'refs/heads/main'
+    steps:
+      - name: 🧹 Clean up old worker versions
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: deployments list --name resume-processor-worker
+
+      - name: 📊 Generate deployment report
+        run: |
+          echo "## Monthly Deployment Report" >> $GITHUB_STEP_SUMMARY
+          echo "Generated on: $(date)" >> $GITHUB_STEP_SUMMARY
+          echo "Repository: ${{ github.repository }}" >> $GITHUB_STEP_SUMMARY
+          echo "Last successful deployment: $(date)" >> $GITHUB_STEP_SUMMARY

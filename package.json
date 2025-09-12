@@ -18,7 +18,8 @@
     "lint:check": "eslint src/**/*.ts tests/**/*.js",
     "format": "prettier --write \"src/**/*.{ts,js,json}\" \"tests/**/*.{js,json}\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"tests/**/*.{js,json}\" \"*.{json,md}\"",
-    "quality": "npm run type-check && npm run lint:check && npm run format:check"
+    "quality": "npm run type-check && npm run lint:check && npm run format:check",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240512.0",
@@ -26,11 +27,25 @@
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
     "prettier": "^3.2.0",
     "typescript": "^5.4.5",
     "wrangler": "^3.78.12"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "lint-staged": {
+    "src/**/*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "tests/**/*.{js,json}": [
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
   }
 }

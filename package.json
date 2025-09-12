@@ -13,10 +13,20 @@
     "test": "node tests/test-runner.js",
     "test:health": "curl -s $npm_config_worker_url/health | jq '.'",
     "test:quick": "npm run test:health && echo 'Health check passed!'",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts tests/**/*.js --fix",
+    "lint:check": "eslint src/**/*.ts tests/**/*.js",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\" \"tests/**/*.{js,json}\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"tests/**/*.{js,json}\" \"*.{json,md}\"",
+    "quality": "npm run type-check && npm run lint:check && npm run format:check"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240512.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.0",
     "typescript": "^5.4.5",
     "wrangler": "^3.78.12"
   },

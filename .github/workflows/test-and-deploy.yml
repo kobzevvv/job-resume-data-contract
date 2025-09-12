@@ -31,22 +31,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🔧 TypeScript type check
-        run: pnpm run type-check
+        run: npm run type-check
 
       - name: 📋 Validate configuration files
         run: |
@@ -81,19 +76,14 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🚀 Deploy to Cloudflare Workers (Staging)
         uses: cloudflare/wrangler-action@v3
@@ -123,19 +113,14 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🚀 Deploy to Cloudflare Workers (Production)
         uses: cloudflare/wrangler-action@v3
@@ -161,19 +146,14 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: 🧪 Test health endpoint
         run: |
@@ -197,19 +177,14 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: 'npm'
 
       - name: 📦 Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: ⚡ Performance test
         env:

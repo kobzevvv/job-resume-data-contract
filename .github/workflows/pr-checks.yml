@@ -10,40 +10,32 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
       - name: Run ESLint
-        run: pnpm run lint
+        run: npm run lint
       - name: Check Prettier formatting
-        run: pnpm run format:check
+        run: npm run format:check
       - name: TypeScript type check
-        run: pnpm run type-check
+        run: npm run type-check
 
   # Contract and Schema Validation
   contract-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
       
       # Validate JSON Schema
       - name: Validate Resume Data Schema
@@ -63,7 +55,7 @@ jobs:
       
       # Run resume processing tests
       - name: Run Resume Processing Tests
-        run: pnpm test
+        run: npm test
       
       # Test expected outputs still match
       - name: Validate Expected Test Outputs
@@ -85,42 +77,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
       - name: Run security audit
-        run: pnpm audit --audit-level moderate
+        run: npm audit --audit-level moderate
       - name: Check for outdated dependencies
         run: |
           echo "Checking for severely outdated dependencies..."
-          pnpm outdated || echo "Some dependencies could be updated"
+          npm outdated || echo "Some dependencies could be updated"
 
   # Build and Basic Functionality
   build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
       - name: Build TypeScript
-        run: pnpm run build
+        run: npm run build
       - name: Verify build output
         run: |
           if [ ! -d "dist" ]; then
@@ -134,17 +118,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
       
       # Test that sample resumes can be read and processed
       - name: Validate Sample Resumes
@@ -168,7 +148,7 @@ jobs:
           echo "Running test suite in dry-run mode..."
           # This assumes your test runner has a dry-run option
           # Adjust based on your actual test setup
-          timeout 30s pnpm test || echo "Tests completed or timed out safely"
+          timeout 30s npm test || echo "Tests completed or timed out safely"
 
   # File Structure and Configuration Checks
   project-structure:

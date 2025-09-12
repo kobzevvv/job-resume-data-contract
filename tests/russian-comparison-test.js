@@ -13,7 +13,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Configuration
-const WORKER_URL = process.env.WORKER_URL || 'https://resume-processor-worker.dev-a96.workers.dev';
+const WORKER_URL =
+  process.env.WORKER_URL ||
+  'https://resume-processor-worker.dev-a96.workers.dev';
 
 // Russian test resume content
 const RUSSIAN_RESUME = `Иванов Иван Петрович
@@ -76,8 +78,8 @@ async function runComparisonTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         resume_text: RUSSIAN_RESUME,
-        options: { include_unmapped: true, strict_validation: false }
-      })
+        options: { include_unmapped: true, strict_validation: false },
+      }),
     });
 
     const data1 = await response1.json();
@@ -85,7 +87,9 @@ async function runComparisonTests() {
 
     if (data1.success && data1.data) {
       console.log('✅ Auto-detection test passed');
-      console.log(`   Detected titles: ${data1.data.desired_titles?.join(', ') || 'none'}`);
+      console.log(
+        `   Detected titles: ${data1.data.desired_titles?.join(', ') || 'none'}`
+      );
       console.log(`   Skills extracted: ${data1.data.skills?.length || 0}`);
       testsPassed++;
     } else {
@@ -108,8 +112,8 @@ async function runComparisonTests() {
       body: JSON.stringify({
         resume_text: RUSSIAN_RESUME,
         language: 'ru',
-        options: { include_unmapped: true, strict_validation: false }
-      })
+        options: { include_unmapped: true, strict_validation: false },
+      }),
     });
 
     const data2 = await response2.json();
@@ -117,14 +121,17 @@ async function runComparisonTests() {
 
     if (data2.success && data2.data) {
       console.log('✅ Explicit Russian test passed');
-      console.log(`   Detected titles: ${data2.data.desired_titles?.join(', ') || 'none'}`);
+      console.log(
+        `   Detected titles: ${data2.data.desired_titles?.join(', ') || 'none'}`
+      );
       console.log(`   Skills extracted: ${data2.data.skills?.length || 0}`);
       testsPassed++;
-      
+
       // Check if responses contain Russian text
-      const hasRussianText = data2.data.desired_titles?.some(title => /[а-яё]/i.test(title)) ||
-                            data2.data.summary && /[а-яё]/i.test(data2.data.summary);
-      
+      const hasRussianText =
+        data2.data.desired_titles?.some(title => /[а-яё]/i.test(title)) ||
+        (data2.data.summary && /[а-яё]/i.test(data2.data.summary));
+
       if (hasRussianText) {
         console.log('✅ Russian text preserved in output');
       } else {
@@ -150,8 +157,8 @@ async function runComparisonTests() {
       body: JSON.stringify({
         resume_text: RUSSIAN_RESUME,
         language: 'en',
-        options: { include_unmapped: true, strict_validation: false }
-      })
+        options: { include_unmapped: true, strict_validation: false },
+      }),
     });
 
     const data3 = await response3.json();
@@ -159,7 +166,9 @@ async function runComparisonTests() {
 
     if (data3.success && data3.data) {
       console.log('✅ Wrong language test passed (graceful handling)');
-      console.log(`   Detected titles: ${data3.data.desired_titles?.join(', ') || 'none'}`);
+      console.log(
+        `   Detected titles: ${data3.data.desired_titles?.join(', ') || 'none'}`
+      );
       testsPassed++;
     } else {
       console.log('❌ Wrong language test failed');
@@ -181,8 +190,8 @@ async function runComparisonTests() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         resume_text: RUSSIAN_RESUME,
-        options: { include_unmapped: false, strict_validation: false }
-      })
+        options: { include_unmapped: false, strict_validation: false },
+      }),
     });
     const time1 = Date.now() - startTime1;
 
@@ -193,8 +202,8 @@ async function runComparisonTests() {
       body: JSON.stringify({
         resume_text: RUSSIAN_RESUME,
         language: 'ru',
-        options: { include_unmapped: false, strict_validation: false }
-      })
+        options: { include_unmapped: false, strict_validation: false },
+      }),
     });
     const time2 = Date.now() - startTime2;
 
@@ -214,7 +223,9 @@ async function runComparisonTests() {
   console.log('==========================');
   console.log(`Tests run: ${testsRun}`);
   console.log(`Tests passed: ${testsPassed}`);
-  console.log(`Success rate: ${testsRun > 0 ? Math.round((testsPassed / testsRun) * 100) : 0}%`);
+  console.log(
+    `Success rate: ${testsRun > 0 ? Math.round((testsPassed / testsRun) * 100) : 0}%`
+  );
 
   if (testsPassed === testsRun && testsRun > 0) {
     console.log('\n🎉 All comparison tests passed!');

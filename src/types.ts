@@ -9,8 +9,16 @@ export interface Env {
 export interface SkillObject {
   name: string;
   level: 1 | 2 | 3 | 4 | 5; // 1=Basic, 2=Limited, 3=Proficient, 4=Advanced, 5=Expert
-  label?: "basic" | "limited" | "proficient" | "advanced" | "expert";
-  type?: "programming_language" | "spoken_language" | "framework" | "tool" | "domain" | "methodology" | "soft_skill" | "other";
+  label?: 'basic' | 'limited' | 'proficient' | 'advanced' | 'expert';
+  type?:
+    | 'programming_language'
+    | 'spoken_language'
+    | 'framework'
+    | 'tool'
+    | 'domain'
+    | 'methodology'
+    | 'soft_skill'
+    | 'other';
   notes?: string;
 }
 
@@ -21,14 +29,14 @@ export interface Experience {
   employer?: string;
   title: string;
   start: string; // YYYY-MM format
-  end?: string | "present" | "Present" | null; // YYYY-MM, 'present', or null
+  end?: string | 'present' | 'Present' | null; // YYYY-MM, 'present', or null
   description: string;
   location?: string;
 }
 
 // Location preference
 export interface LocationPreference {
-  type?: "remote" | "hybrid" | "onsite";
+  type?: 'remote' | 'hybrid' | 'onsite';
   preferred_locations?: string[];
 }
 
@@ -37,7 +45,7 @@ export interface SalaryExpectation {
   currency: string; // 3-letter currency code
   min?: number;
   max?: number;
-  periodicity: "year" | "month" | "day" | "hour" | "project";
+  periodicity: 'year' | 'month' | 'day' | 'hour' | 'project';
   notes?: string;
 }
 
@@ -55,7 +63,13 @@ export interface ResumeData {
   skills: Skill[];
   experience: Experience[];
   location_preference?: LocationPreference;
-  schedule?: "full_time" | "part_time" | "contract" | "freelance" | "internship" | "temporary";
+  schedule?:
+    | 'full_time'
+    | 'part_time'
+    | 'contract'
+    | 'freelance'
+    | 'internship'
+    | 'temporary';
   salary_expectation?: SalaryExpectation;
   availability?: string;
   links?: Link[];
@@ -94,9 +108,9 @@ export interface APIError {
 
 // Health check response
 export interface HealthResponse {
-  status: "healthy" | "unhealthy";
+  status: 'healthy' | 'unhealthy';
   timestamp: string;
   version: string;
   endpoints: string[];
-  ai_status?: "available" | "unavailable";
+  ai_status?: 'available' | 'unavailable';
 }

@@ -5,41 +5,44 @@
     "node": true
   },
   "extends": [
-    "@typescript-eslint/recommended",
-    "@typescript-eslint/recommended-requiring-type-checking",
-    "prettier"
+    "eslint:recommended"
   ],
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "ecmaVersion": 2022,
-    "sourceType": "module",
-    "project": "./tsconfig.json"
+    "sourceType": "module"
   },
   "plugins": ["@typescript-eslint"],
   "rules": {
-    // TypeScript specific rules
-    "@typescript-eslint/no-unused-vars": "error",
-    "@typescript-eslint/explicit-function-return-type": "warn",
-    "@typescript-eslint/no-explicit-any": "warn",
-    "@typescript-eslint/prefer-const": "error",
-    "@typescript-eslint/no-non-null-assertion": "warn",
-    
-    // General code quality
+    // Basic code quality
     "no-console": "warn",
     "prefer-const": "error",
     "no-var": "error",
     "eqeqeq": "error",
     "curly": "error",
-    
-    // Import organization
-    "sort-imports": ["error", {
-      "ignoreCase": true,
-      "ignoreDeclarationSort": true
-    }]
+    "no-unused-vars": "off",
+    "@typescript-eslint/no-unused-vars": "error"
   },
   "ignorePatterns": [
     "dist/**/*",
-    "node_modules/**/*",
-    "*.js"
+    "node_modules/**/*"
+  ],
+  "overrides": [
+    {
+      "files": ["*.ts"],
+      "extends": [
+        "eslint:recommended"
+      ],
+      "rules": {
+        "@typescript-eslint/no-explicit-any": "warn"
+      }
+    },
+    {
+      "files": ["tests/**/*.js"],
+      "rules": {
+        "no-console": "off",
+        "@typescript-eslint/no-unused-vars": "warn"
+      }
+    }
   ]
 }

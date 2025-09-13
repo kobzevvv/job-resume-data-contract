@@ -1,7 +1,7 @@
 # 🚀 Resume Processor Worker
 
 A high-performance Cloudflare Worker that converts text resumes into structured JSON using AI. Built following Cloudflare Workers best practices for reliability, performance, and maintainability.
-
+ 
 ## ✨ Features
 
 - **AI-Powered Extraction**: Uses Cloudflare AI to intelligently parse resume text

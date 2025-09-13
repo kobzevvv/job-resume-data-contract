@@ -113,13 +113,16 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: Build TypeScript
         run: pnpm run build
-      - name: Verify build output
+      - name: Verify TypeScript compilation
         run: |
-          if [ ! -d "dist" ]; then
-            echo "❌ Build output directory not found"
-            exit 1
-          fi
-          echo "✅ Build completed successfully"
+          echo "✅ TypeScript compilation successful (noEmit mode)"
+          echo "ℹ️  For Cloudflare Workers, bundling is handled by Wrangler"
+
+      - name: Test Wrangler build
+        run: |
+          echo "🔨 Testing Wrangler build process..."
+          pnpm exec wrangler deploy --dry-run --env staging
+          echo "✅ Wrangler build test successful"
 
   # Resume Processing Smoke Tests
   processing-smoke-tests:

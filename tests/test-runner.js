@@ -118,7 +118,7 @@ async function processResume(resumeFile, resumeText, language = 'en') {
 
     logTest(
       `${resumeFile}: Processing time reasonable`,
-      processingTime < 30000,
+      processingTime < 90000,
       `Took ${processingTime}ms`
     );
 

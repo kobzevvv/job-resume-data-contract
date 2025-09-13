@@ -210,7 +210,7 @@ jobs:
       - name: Validate Configuration Files
         run: |
           echo "Validating configuration files..."
-
+          
           # Validate package.json has required scripts
           node -e "
             const pkg = require('./package.json');
@@ -222,7 +222,7 @@ jobs:
             }
             console.log('✅ All required package.json scripts present');
           "
-
+          
           # Validate tsconfig.json
           node -e "
             const tsconfig = require('./tsconfig.json');
@@ -232,3 +232,7 @@ jobs:
             }
             console.log('✅ TypeScript configuration is valid');
           "
+          
+          # Validate workflow setup consistency
+          echo "🔍 Validating workflow setup..."
+          pnpm run validate-setup

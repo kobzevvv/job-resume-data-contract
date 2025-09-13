@@ -31,6 +31,8 @@ Converts text resume to structured JSON format.
 }
 ```
 
+---
+
 **Response:**
 
 ```json

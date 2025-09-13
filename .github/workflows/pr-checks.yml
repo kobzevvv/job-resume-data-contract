@@ -2,7 +2,7 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: [ main, develop ]
+    branches: [main, develop]
 
 jobs:
   # Code Quality Checks
@@ -10,33 +10,41 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm run lint
       - name: Check Prettier formatting
-        run: npm run format:check
+        run: pnpm run format:check
       - name: TypeScript type check
-        run: npm run type-check
+        run: pnpm run type-check
 
   # Contract and Schema Validation
   contract-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
       - name: Install dependencies
-        run: npm ci
-      
+        run: pnpm install --frozen-lockfile
+
       # Validate JSON Schema
       - name: Validate Resume Data Schema
         run: |
@@ -52,11 +60,11 @@ jobs:
             }
             console.log('✅ Schema structure is valid');
           "
-      
+
       # Run resume processing tests
       - name: Run Resume Processing Tests
-        run: npm test
-      
+        run: pnpm test
+
       # Test expected outputs still match
       - name: Validate Expected Test Outputs
         run: |
@@ -77,34 +85,42 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Run security audit
-        run: npm audit --audit-level moderate
+        run: pnpm audit --audit-level moderate
       - name: Check for outdated dependencies
         run: |
           echo "Checking for severely outdated dependencies..."
-          npm outdated || echo "Some dependencies could be updated"
+          pnpm outdated || echo "Some dependencies could be updated"
 
   # Build and Basic Functionality
   build-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - name: Build TypeScript
-        run: npm run build
+        run: pnpm run build
       - name: Verify build output
         run: |
           if [ ! -d "dist" ]; then
@@ -118,14 +134,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'npm'
+          cache: 'pnpm'
       - name: Install dependencies
-        run: npm ci
-      
+        run: pnpm install --frozen-lockfile
+
       # Test that sample resumes can be read and processed
       - name: Validate Sample Resumes
         run: |
@@ -141,14 +161,14 @@ jobs:
             fi
             echo "✅ Valid resume file: $resume"
           done
-      
+
       # Quick validation that our test runner works
       - name: Dry Run Test Suite
         run: |
           echo "Running test suite in dry-run mode..."
           # This assumes your test runner has a dry-run option
           # Adjust based on your actual test setup
-          timeout 30s npm test || echo "Tests completed or timed out safely"
+          timeout 30s pnpm test || echo "Tests completed or timed out safely"
 
   # File Structure and Configuration Checks
   project-structure:
@@ -158,7 +178,7 @@ jobs:
       - name: Validate Project Structure
         run: |
           echo "Validating project structure..."
-          
+
           # Required files check
           required_files=(
             "package.json"
@@ -167,7 +187,7 @@ jobs:
             "resume_data_contract/resume_data_schema.json"
             "resume_data_contract/resume_data_value_example.json"
           )
-          
+
           for file in "${required_files[@]}"; do
             if [ ! -f "$file" ]; then
               echo "❌ Required file missing: $file"
@@ -175,7 +195,7 @@ jobs:
             fi
             echo "✅ Found: $file"
           done
-          
+
           # Required directories check
           required_dirs=(
             "src"
@@ -183,7 +203,7 @@ jobs:
             "tests/sample-resumes"
             "tests/expected-outputs"
           )
-          
+
           for dir in "${required_dirs[@]}"; do
             if [ ! -d "$dir" ]; then
               echo "❌ Required directory missing: $dir"
@@ -191,13 +211,13 @@ jobs:
             fi
             echo "✅ Found: $dir"
           done
-          
+
           echo "✅ Project structure validation passed"
-      
+
       - name: Validate Configuration Files
         run: |
           echo "Validating configuration files..."
-          
+
           # Validate package.json has required scripts
           node -e "
             const pkg = require('./package.json');
@@ -209,7 +229,7 @@ jobs:
             }
             console.log('✅ All required package.json scripts present');
           "
-          
+
           # Validate tsconfig.json
           node -e "
             const tsconfig = require('./tsconfig.json');

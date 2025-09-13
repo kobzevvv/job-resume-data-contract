@@ -13,6 +13,16 @@ A high-performance Cloudflare Worker that converts text resumes into structured 
 - **CORS Support**: Ready for cross-origin requests
 - **Type Safety**: Full TypeScript implementation with strict typing
 
+## 📚 API Documentation
+
+For external developers integrating with this API, see the comprehensive [API Documentation](API_DOCUMENTATION.md) which includes:
+
+- Complete request/response examples
+- Code samples in JavaScript, Python, and cURL
+- Data structure specifications
+- Error handling guidelines
+- Rate limiting information
+
 ## 📋 API Endpoints
 
 ### `POST /process-resume`

@@ -20,7 +20,7 @@ on:
           - production
 
 env:
-  NODE_VERSION: '18'
+  NODE_VERSION: '20'
 
 jobs:
   # Type checking and linting
@@ -31,17 +31,20 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🟢 Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: 🔧 TypeScript type check
-        run: npm run type-check
+        run: pnpm run type-check
 
       - name: 📋 Validate configuration files
         run: |
@@ -50,7 +53,7 @@ jobs:
             echo "❌ wrangler.toml not found"
             exit 1
           fi
-          
+
           # Validate package.json has required scripts
           node -e "
             const pkg = require('./package.json');
@@ -76,14 +79,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🟢 Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: 🚀 Deploy to Cloudflare Workers (Staging)
         uses: cloudflare/wrangler-action@v3
@@ -98,7 +104,7 @@ jobs:
       - name: 🧪 Run staging tests
         env:
           WORKER_URL: https://resume-processor-staging.dev-a96.workers.dev
-        run: npm test
+        run: pnpm test
 
   # Deploy to production
   deploy-production:
@@ -113,14 +119,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🟢 Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: 🚀 Deploy to Cloudflare Workers (Production)
         uses: cloudflare/wrangler-action@v3
@@ -135,7 +144,7 @@ jobs:
       - name: 🧪 Run production tests
         env:
           WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
-        run: npm test
+        run: pnpm test
 
   # Test existing deployment (for PRs and scheduled runs)
   test-existing:
@@ -146,14 +155,17 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🟢 Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: 🧪 Test health endpoint
         run: |
@@ -165,7 +177,7 @@ jobs:
       - name: 🧪 Run full test suite
         env:
           WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
-        run: npm test
+        run: pnpm test
 
   # Performance and load testing
   performance-test:
@@ -177,21 +189,24 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v4
 
+      - name: 🟢 Setup pnpm
+        uses: pnpm/action-setup@v4
+
       - name: 🟢 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          cache: 'pnpm'
 
       - name: 📦 Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: ⚡ Performance test
         env:
           WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
         run: |
           echo "🏃 Running performance tests..."
-          
+
           # Test response times
           for i in {1..3}; do
             echo "Test run $i:"
@@ -208,7 +223,7 @@ jobs:
           WORKER_URL: https://resume-processor-worker.dev-a96.workers.dev
         run: |
           echo "📊 Running light load test..."
-          
+
           # Simple concurrent test
           for i in {1..5}; do
             curl -s -X POST \
@@ -216,7 +231,7 @@ jobs:
               -d '{"resume_text":"Test resume for load testing. Software engineer with experience in development."}' \
               $WORKER_URL/process-resume &
           done
-          
+
           wait
           echo "✅ Load test completed"
 
@@ -234,18 +249,18 @@ jobs:
             const title = `🚨 CI/CD Pipeline Failed - ${context.workflow} - ${context.sha.substring(0, 7)}`;
             const body = `
             ## Pipeline Failure Report
-            
+
             **Workflow:** ${context.workflow}
             **Branch:** ${context.ref}
             **Commit:** ${context.sha}
             **Run:** https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}
-            
+
             **Failed Jobs:**
             ${JSON.stringify(context.payload, null, 2)}
-            
+
             Please investigate and fix the issues.
             `;
-            
+
             await github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,

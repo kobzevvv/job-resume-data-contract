@@ -1,7 +1,7 @@
 # 🚀 Resume Processor Worker
 
 A high-performance Cloudflare Worker that converts text resumes into structured JSON using AI. Built following Cloudflare Workers best practices for reliability, performance, and maintainability.
- 
+
 ## ✨ Features
 
 - **AI-Powered Extraction**: Uses Cloudflare AI to intelligently parse resume text
@@ -20,6 +20,7 @@ A high-performance Cloudflare Worker that converts text resumes into structured 
 Converts text resume to structured JSON format.
 
 **Request:**
+
 ```json
 {
   "resume_text": "string (required, min 50 characters)",
@@ -31,6 +32,7 @@ Converts text resume to structured JSON format.
 ```
 
 **Response:**
+
 ```json
 {
   "success": "boolean",
@@ -51,6 +53,7 @@ Converts text resume to structured JSON format.
 Health check endpoint for monitoring.
 
 **Response:**
+
 ```json
 {
   "status": "healthy | unhealthy",
@@ -66,12 +69,14 @@ Health check endpoint for monitoring.
 The worker extracts resume information into the following structure:
 
 ### Required Fields
+
 - `desired_titles`: Array of target job titles
 - `summary`: Professional summary/objective
 - `skills`: Array of skills with proficiency levels
 - `experience`: Work experience entries
 
 ### Optional Fields
+
 - `location_preference`: Work location preferences
 - `schedule`: Employment type (full_time, part_time, etc.)
 - `salary_expectation`: Salary requirements with currency
@@ -79,6 +84,7 @@ The worker extracts resume information into the following structure:
 - `links`: Professional links (LinkedIn, GitHub, etc.)
 
 ### Example Resume Data
+
 ```json
 {
   "version": "1.1",
@@ -132,14 +138,17 @@ The worker extracts resume information into the following structure:
 ## 🛠️ Usage Examples
 
 ### Basic Usage
+
 ```javascript
-const response = await fetch('https://resume-processor-worker.example.workers.dev/process-resume', {
-  method: 'POST',
-  headers: {
-    'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({
-    resume_text: `
+const response = await fetch(
+  'https://resume-processor-worker.example.workers.dev/process-resume',
+  {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      resume_text: `
       John Doe
       Senior Software Engineer
       
@@ -154,12 +163,13 @@ const response = await fetch('https://resume-processor-worker.example.workers.de
       - AWS Services
       - PostgreSQL
     `,
-    options: {
-      include_unmapped: true,
-      strict_validation: false
-    }
-  })
-});
+      options: {
+        include_unmapped: true,
+        strict_validation: false,
+      },
+    }),
+  }
+);
 
 const result = await response.json();
 console.log(result.data); // Structured resume JSON
@@ -167,36 +177,37 @@ console.log(result.unmapped_fields); // Fields that couldn't be extracted
 ```
 
 ### Error Handling
+
 ```javascript
 try {
   const response = await fetch('/process-resume', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ resume_text: resumeText })
+    body: JSON.stringify({ resume_text: resumeText }),
   });
-  
+
   if (!response.ok) {
     const error = await response.json();
     console.error(`API Error (${error.code}): ${error.error}`);
     return;
   }
-  
+
   const result = await response.json();
-  
+
   if (!result.success) {
     console.error('Processing failed:', result.errors);
     return;
   }
-  
+
   // Success - use result.data
   console.log('Extracted resume data:', result.data);
-  
 } catch (error) {
   console.error('Network error:', error);
 }
 ```
 
 ### Health Check
+
 ```javascript
 const healthResponse = await fetch('/health');
 const health = await healthResponse.json();
@@ -211,11 +222,13 @@ if (health.status === 'healthy') {
 ## 🚀 Deployment
 
 ### Prerequisites
+
 - Node.js 18+
 - Cloudflare account with Workers enabled
 - Wrangler CLI installed
 
 ### Setup
+
 ```bash
 # Clone and install dependencies
 npm install
@@ -231,6 +244,7 @@ npm run deploy:prod
 ```
 
 ### Environment Configuration
+
 ```toml
 # wrangler.toml
 name = "resume-processor-worker"
@@ -247,6 +261,7 @@ binding = "AI"
 ## 🔧 Development
 
 ### Local Development
+
 ```bash
 # Start development server
 npm run dev
@@ -261,6 +276,7 @@ curl http://localhost:8787/health
 ```
 
 ### Testing
+
 ```bash
 # Type checking
 npm run type-check
@@ -272,55 +288,62 @@ npm test
 ## 📈 Performance & Limits
 
 ### Request Limits
+
 - **Max Request Size**: 50KB
 - **Rate Limiting**: 100 requests per minute per client
 - **Processing Time**: Typically 2-5 seconds
 - **AI Timeout**: 30 seconds maximum
 
 ### Response Times
+
 - **Health Check**: ~50ms
 - **Resume Processing**: 2-5 seconds (depending on resume length)
 - **Error Responses**: ~10ms
 
 ### Caching
+
 - No caching implemented (each request processes fresh)
 - Consider implementing edge caching for repeated requests
 
 ## 🔒 Security
 
 ### Input Validation
+
 - JSON schema validation
 - Request size limits
 - Content type enforcement
 - Sanitization of logged data
 
 ### Rate Limiting
+
 - IP-based request throttling
 - Configurable limits per environment
 - Automatic cleanup of rate limit data
 
 ### Data Privacy
+
 - No resume data is stored permanently
 - Sensitive information sanitized in logs
 - CORS configured for cross-origin access
 
 ## 🐛 Error Codes
 
-| Code | Status | Description |
-|------|---------|-------------|
-| `INVALID_CONTENT_TYPE` | 400 | Request must be JSON |
-| `INVALID_JSON` | 400 | Malformed JSON in request |
-| `MISSING_RESUME_TEXT` | 400 | resume_text field required |
-| `RESUME_TEXT_TOO_SHORT` | 400 | Resume text too short (<50 chars) |
-| `PAYLOAD_TOO_LARGE` | 413 | Request exceeds size limit |
-| `AI_PROCESSING_FAILED` | 422 | AI couldn't extract data |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
-| `NOT_FOUND` | 404 | Endpoint not found |
-| `INTERNAL_ERROR` | 500 | Server error |
+| Code                    | Status | Description                       |
+| ----------------------- | ------ | --------------------------------- |
+| `INVALID_CONTENT_TYPE`  | 400    | Request must be JSON              |
+| `INVALID_JSON`          | 400    | Malformed JSON in request         |
+| `MISSING_RESUME_TEXT`   | 400    | resume_text field required        |
+| `RESUME_TEXT_TOO_SHORT` | 400    | Resume text too short (<50 chars) |
+| `PAYLOAD_TOO_LARGE`     | 413    | Request exceeds size limit        |
+| `AI_PROCESSING_FAILED`  | 422    | AI couldn't extract data          |
+| `RATE_LIMIT_EXCEEDED`   | 429    | Too many requests                 |
+| `NOT_FOUND`             | 404    | Endpoint not found                |
+| `INTERNAL_ERROR`        | 500    | Server error                      |
 
 ## 🎯 Integration Examples
 
 ### React/TypeScript
+
 ```typescript
 interface ProcessResumeResponse {
   success: boolean;
@@ -330,18 +353,21 @@ interface ProcessResumeResponse {
   processing_time_ms: number;
 }
 
-async function processResume(resumeText: string): Promise<ProcessResumeResponse> {
+async function processResume(
+  resumeText: string
+): Promise<ProcessResumeResponse> {
   const response = await fetch('/process-resume', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ resume_text: resumeText })
+    body: JSON.stringify({ resume_text: resumeText }),
   });
-  
+
   return await response.json();
 }
 ```
 
 ### Python
+
 ```python
 import requests
 import json
@@ -363,6 +389,7 @@ else:
 ```
 
 ### Node.js
+
 ```javascript
 const axios = require('axios');
 
@@ -370,9 +397,9 @@ async function processResume(resumeText) {
   try {
     const response = await axios.post('/process-resume', {
       resume_text: resumeText,
-      options: { include_unmapped: true }
+      options: { include_unmapped: true },
     });
-    
+
     return response.data;
   } catch (error) {
     if (error.response) {
@@ -386,7 +413,9 @@ async function processResume(resumeText) {
 ## 📊 Monitoring
 
 ### Logs
+
 The worker uses structured JSON logging:
+
 ```json
 {
   "level": "info",
@@ -400,6 +429,7 @@ The worker uses structured JSON logging:
 ```
 
 ### Metrics to Monitor
+
 - Request volume and response times
 - Success/failure rates
 - AI processing times

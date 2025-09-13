@@ -3,11 +3,19 @@
   "language": "ru",
   "validation_rules": {
     "desired_titles": {
-      "should_contain": ["инженер", "техническая поддержка", "системный администратор"],
+      "should_contain": [
+        "инженер",
+        "техническая поддержка",
+        "системный администратор"
+      ],
       "min_items": 1
     },
     "summary": {
-      "should_contain": ["техническая поддержка", "системное администрирование", "опыт"],
+      "should_contain": [
+        "техническая поддержка",
+        "системное администрирование",
+        "опыт"
+      ],
       "min_length": 50,
       "language": "ru"
     },
@@ -17,9 +25,15 @@
         { "name_contains": "windows", "level": { "min": 3, "max": 5 } },
         { "name_contains": "сети", "level": { "min": 3, "max": 5 } },
         { "name_contains": "лвс", "level": { "min": 3, "max": 5 } },
-        { "name_contains": "администрирование", "level": { "min": 3, "max": 5 } },
+        {
+          "name_contains": "администрирование",
+          "level": { "min": 3, "max": 5 }
+        },
         { "name_contains": "настройка по", "level": { "min": 2, "max": 5 } },
-        { "name_contains": "active directory", "level": { "min": 2, "max": 5 } },
+        {
+          "name_contains": "active directory",
+          "level": { "min": 2, "max": 5 }
+        },
         { "name_contains": "hyper-v", "level": { "min": 2, "max": 4 } }
       ],
       "language_skills": [

@@ -2,7 +2,13 @@
   "description": "Expected output patterns for senior-backend-engineer.txt resume",
   "validation_rules": {
     "desired_titles": {
-      "should_contain": ["engineer", "backend", "senior", "staff", "technical lead"],
+      "should_contain": [
+        "engineer",
+        "backend",
+        "senior",
+        "staff",
+        "technical lead"
+      ],
       "min_items": 1
     },
     "summary": {

@@ -14,9 +14,9 @@ on:
         default: 'russian-only'
         type: choice
         options:
-        - russian-only
-        - all-languages
-        - comparison
+          - russian-only
+          - all-languages
+          - comparison
 
 env:
   WORKER_URL: ${{ github.event.inputs.worker_url }}
@@ -25,57 +25,52 @@ jobs:
   test-russian-resumes:
     runs-on: ubuntu-latest
     name: Test Russian Resume Processing
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 8
-      
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
-          cache: 'pnpm'
+          cache: 'npm'
       
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
         
       - name: Wait for worker deployment
         run: |
           echo "Waiting 30 seconds for potential worker deployment to stabilize..."
           sleep 30
-          
+
       - name: Test worker health
         run: |
           echo "🔍 Testing worker health at: $WORKER_URL"
           curl -f "$WORKER_URL/health" || exit 1
-          
+
       - name: Run Russian resume tests only
         if: ${{ github.event.inputs.test_type == 'russian-only' }}
         run: |
           echo "🇷🇺 Running Russian-specific tests..."
           node tests/test-runner.js | grep -E "(Testing Resume.*russian|PASS|FAIL|Summary)"
-          
+
       - name: Run all language tests
         if: ${{ github.event.inputs.test_type == 'all-languages' }}
         run: |
           echo "🌍 Running tests for all languages..."
           node tests/test-runner.js
-          
+
       - name: Run language comparison tests
         if: ${{ github.event.inputs.test_type == 'comparison' }}
         run: |
           echo "🔄 Running language comparison tests..."
           node tests/russian-comparison-test.js
-          
+
       - name: Test Russian-specific functionality
         run: |
           echo "🧪 Testing Russian language detection and processing..."
-          
+
           # Test Russian resume with explicit language parameter
           curl -X POST "$WORKER_URL/process-resume" \
             -H "Content-Type: application/json" \
@@ -87,33 +82,33 @@ jobs:
                 "strict_validation": false
               }
             }' | jq '.success' | grep -q true || exit 1
-          
+
           echo "✅ Russian language processing test passed!"
-          
+
       - name: Validate Russian output structure
         run: |
           echo "📊 Validating Russian resume output structure..."
-          
+
           RESPONSE=$(curl -s -X POST "$WORKER_URL/process-resume" \
             -H "Content-Type: application/json" \
             -d '{
               "resume_text": "Петров Петр\nСистемный администратор\nСПб\nНавыки: Linux, Windows Server, сети",
               "language": "ru"
             }')
-          
+
           # Check if response contains Russian text
           echo "$RESPONSE" | jq -r '.data.desired_titles[]?' | grep -E '[а-яё]' || {
             echo "❌ Expected Russian text in desired_titles"
             echo "Response: $RESPONSE"
             exit 1
           }
-          
+
           echo "✅ Russian output structure validation passed!"
-          
+
       - name: Performance test for Russian resumes
         run: |
           echo "⚡ Running performance tests for Russian resumes..."
-          
+
           START_TIME=$(date +%s%3N)
           curl -s -X POST "$WORKER_URL/process-resume" \
             -H "Content-Type: application/json" \
@@ -126,21 +121,21 @@ jobs:
           ) > /dev/null
           END_TIME=$(date +%s%3N)
           DURATION=$((END_TIME - START_TIME))
-          
+
           echo "Processing time: ${DURATION}ms"
-          
+
           if [ $DURATION -gt 15000 ]; then
             echo "❌ Processing took too long: ${DURATION}ms (max: 15000ms)"
             exit 1
           fi
-          
+
           echo "✅ Performance test passed!"
-          
+
   generate-test-report:
     runs-on: ubuntu-latest
     needs: test-russian-resumes
     if: always()
-    
+
     steps:
       - name: Generate test report
         run: |
@@ -150,13 +145,13 @@ jobs:
           echo "**Worker URL:** ${{ github.event.inputs.worker_url }}" >> $GITHUB_STEP_SUMMARY
           echo "**Timestamp:** $(date -u)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [ "${{ needs.test-russian-resumes.result }}" = "success" ]; then
             echo "✅ **Status:** All Russian resume tests passed!" >> $GITHUB_STEP_SUMMARY
           else
             echo "❌ **Status:** Some tests failed. Check logs above." >> $GITHUB_STEP_SUMMARY
           fi
-          
+
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## Features Tested" >> $GITHUB_STEP_SUMMARY
           echo "- ✅ Russian language detection" >> $GITHUB_STEP_SUMMARY

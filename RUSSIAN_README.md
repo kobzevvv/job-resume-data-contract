@@ -23,13 +23,13 @@ const response = await fetch('/process-resume', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    resume_text: "Иванов Иван\nПрограммист...",
-    language: "ru",  // Specify Russian language
+    resume_text: 'Иванов Иван\nПрограммист...',
+    language: 'ru', // Specify Russian language
     options: {
       include_unmapped: true,
-      strict_validation: false
-    }
-  })
+      strict_validation: false,
+    },
+  }),
 });
 ```
 
@@ -41,13 +41,13 @@ const response = await fetch('/process-resume', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    resume_text: "Петров Сергей\nСистемный администратор...",
+    resume_text: 'Петров Сергей\nСистемный администратор...',
     // language parameter is optional - will auto-detect Russian
     options: {
       include_unmapped: true,
-      strict_validation: false
-    }
-  })
+      strict_validation: false,
+    },
+  }),
 });
 ```
 
@@ -68,24 +68,25 @@ Russian month names are automatically converted to ISO format:
 
 ### Russian Month Names Support
 
-| Russian | English | ISO |
-|---------|---------|-----|
-| Январь/янв | January | 01 |
-| Февраль/фев | February | 02 |
-| Март/мар | March | 03 |
-| Апрель/апр | April | 04 |
-| Май | May | 05 |
-| Июнь/июн | June | 06 |
-| Июль/июл | July | 07 |
-| Август/авг | August | 08 |
-| Сентябрь/сен | September | 09 |
-| Октябрь/окт | October | 10 |
-| Ноябрь/ноя | November | 11 |
-| Декабрь/дек | December | 12 |
+| Russian      | English   | ISO |
+| ------------ | --------- | --- |
+| Январь/янв   | January   | 01  |
+| Февраль/фев  | February  | 02  |
+| Март/мар     | March     | 03  |
+| Апрель/апр   | April     | 04  |
+| Май          | May       | 05  |
+| Июнь/июн     | June      | 06  |
+| Июль/июл     | July      | 07  |
+| Август/авг   | August    | 08  |
+| Сентябрь/сен | September | 09  |
+| Октябрь/окт  | October   | 10  |
+| Ноябрь/ноя   | November  | 11  |
+| Декабрь/дек  | December  | 12  |
 
 ### Example Russian Resume Processing
 
 **Input:**
+
 ```
 Шемаханский Виктор
 Инженер технической поддержки
@@ -95,21 +96,24 @@ Russian month names are automatically converted to ISO format:
 ```
 
 **Expected Output:**
+
 ```json
 {
   "desired_titles": ["Инженер технической поддержки"],
   "summary": "Специалист технической поддержки с опытом администрирования...",
   "skills": [
-    {"name": "Windows Server", "level": 4, "type": "tool"},
-    {"name": "Linux", "level": 3, "type": "tool"},
-    {"name": "Сети", "level": 3, "type": "domain"}
+    { "name": "Windows Server", "level": 4, "type": "tool" },
+    { "name": "Linux", "level": 3, "type": "tool" },
+    { "name": "Сети", "level": 3, "type": "domain" }
   ],
-  "experience": [{
-    "title": "Инженер технической поддержки",
-    "start": "2020-06",
-    "end": "present",
-    "description": "..."
-  }]
+  "experience": [
+    {
+      "title": "Инженер технической поддержки",
+      "start": "2020-06",
+      "end": "present",
+      "description": "..."
+    }
+  ]
 }
 ```
 
@@ -145,6 +149,7 @@ WORKER_URL=your-worker-url node tests/test-runner.js
 ### Test Files
 
 Russian test files are located in:
+
 - `tests/sample-resumes/russian-it-specialist.txt` - Sanitized Russian resume
 - `tests/expected-outputs/russian-it-specialist.json` - Expected validation patterns
 
@@ -159,6 +164,7 @@ The system automatically detects Russian language using:
 ## Error Handling
 
 The system gracefully handles:
+
 - Mixed language content
 - Incorrect language parameters
 - Cyrillic encoding issues
@@ -167,6 +173,7 @@ The system gracefully handles:
 ## Performance
 
 Russian language processing has similar performance to English:
+
 - Average processing time: 2-8 seconds
 - Memory usage: Same as English processing
 - AI model: Supports multilingual input
@@ -190,6 +197,7 @@ Russian language processing has similar performance to English:
 ### Support
 
 For issues with Russian language processing:
+
 1. Check the GitHub Action test results
 2. Run comparison tests locally
 3. Verify input encoding and format
@@ -198,6 +206,7 @@ For issues with Russian language processing:
 ## Future Enhancements
 
 Planned improvements for Russian language support:
+
 - Ukrainian language support
 - Regional Russian date formats
 - Industry-specific Russian terminology

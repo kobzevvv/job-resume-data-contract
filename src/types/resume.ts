@@ -41,7 +41,7 @@ export interface ResumeDataContract {
     /**
      * End date (YYYY-MM), 'present', or null if ongoing.
      */
-    end?: (string | "present" | "Present") | null;
+    end?: (string | 'present' | 'Present') | null;
     /**
      * Plain-text description of responsibilities/impact.
      */
@@ -55,7 +55,7 @@ export interface ResumeDataContract {
     /**
      * Preferred working mode.
      */
-    type?: "remote" | "hybrid" | "onsite";
+    type?: 'remote' | 'hybrid' | 'onsite';
     /**
      * Optional list of acceptable cities/countries/regions.
      */
@@ -64,7 +64,13 @@ export interface ResumeDataContract {
   /**
    * Preferred engagement type.
    */
-  schedule?: "full_time" | "part_time" | "contract" | "freelance" | "internship" | "temporary";
+  schedule?:
+    | 'full_time'
+    | 'part_time'
+    | 'contract'
+    | 'freelance'
+    | 'internship'
+    | 'temporary';
   salary_expectation?: {
     /**
      * ISO 4217 currency code (e.g., EUR, USD).
@@ -81,7 +87,7 @@ export interface ResumeDataContract {
     /**
      * How the compensation is quoted.
      */
-    periodicity: "year" | "month" | "day" | "hour" | "project";
+    periodicity: 'year' | 'month' | 'day' | 'hour' | 'project';
     /**
      * Optional notes (e.g., equity/bonus expectations).
      */

@@ -12,16 +12,41 @@
     "deploy:prod": "wrangler deploy --env production",
     "test": "node tests/test-runner.js",
     "test:health": "curl -s $npm_config_worker_url/health | jq '.'",
-    "test:quick": "npm run test:health && echo 'Health check passed!'",
-    "type-check": "tsc --noEmit"
+    "test:quick": "pnpm run test:health && echo 'Health check passed!'",
+    "type-check": "tsc --noEmit",
+    "lint": "eslint src/**/*.ts tests/**/*.js --fix",
+    "lint:check": "eslint src/**/*.ts tests/**/*.js",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\" \"tests/**/*.{js,json}\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"tests/**/*.{js,json}\" \"*.{json,md}\"",
+    "quality": "pnpm run type-check && pnpm run lint:check && pnpm run format:check",
+    "prepare": "husky install"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20240512.0",
+    "@typescript-eslint/eslint-plugin": "^7.0.0",
+    "@typescript-eslint/parser": "^7.0.0",
+    "eslint": "^8.57.0",
+    "eslint-config-prettier": "^9.1.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6",
+    "prettier": "^3.2.0",
     "typescript": "^5.4.5",
-    "wrangler": "^3.78.12"
+    "wrangler": "^4.36.0"
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "lint-staged": {
+    "src/**/*.{ts,js}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "tests/**/*.{js,json}": [
+      "prettier --write"
+    ],
+    "*.{json,md}": [
+      "prettier --write"
+    ]
+  },
+  "packageManager": "pnpm@9.12.3+sha512.cce0f9de9c5a7c95bef944169cc5dfe8741abfb145078c0d508b868056848a87c81e626246cb60967cbd7fd29a6c062ef73ff840d96b3c86c40ac92cf4a813ee"
 }
-

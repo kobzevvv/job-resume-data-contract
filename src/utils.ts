@@ -3,15 +3,19 @@ import { APIError } from './types';
 /**
  * Structured logging utility
  */
-export function logEvent(level: 'info' | 'warn' | 'error', message: string, data?: any): void {
+export function logEvent(
+  level: 'info' | 'warn' | 'error',
+  message: string,
+  data?: any
+): void {
   const logEntry = {
     level,
     message,
     timestamp: new Date().toISOString(),
     worker: 'resume-processor',
-    ...data
+    ...data,
   };
-  
+
   console.log(JSON.stringify(logEntry));
 }
 
@@ -28,19 +32,19 @@ export function createErrorResponse(
     error: message,
     code,
     timestamp: new Date().toISOString(),
-    ...(details && { details })
+    ...(details && { details }),
   };
-  
+
   logEvent('error', `API Error: ${code}`, { status, error: message, details });
-  
+
   return new Response(JSON.stringify(error), {
     status,
     headers: {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
   });
 }
 
@@ -53,8 +57,8 @@ export function createSuccessResponse(data: any): Response {
       'Content-Type': 'application/json',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type'
-    }
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
   });
 }
 
@@ -68,8 +72,8 @@ export function handleCORS(): Response {
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
-      'Access-Control-Max-Age': '86400' // 24 hours
-    }
+      'Access-Control-Max-Age': '86400', // 24 hours
+    },
   });
 }
 
@@ -92,7 +96,9 @@ export async function parseJsonRequest<T>(request: Request): Promise<T> {
     }
     return JSON.parse(body) as T;
   } catch (error) {
-    throw new Error(`Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    throw new Error(
+      `Invalid JSON: ${error instanceof Error ? error.message : 'Unknown error'}`
+    );
   }
 }
 
@@ -107,7 +113,10 @@ export function measureTime(): () => number {
 /**
  * Validates request size
  */
-export function validateRequestSize(request: Request, maxSizeBytes: number = 50000): boolean {
+export function validateRequestSize(
+  request: Request,
+  maxSizeBytes: number = 50000
+): boolean {
   const contentLength = request.headers.get('content-length');
   if (contentLength) {
     const size = parseInt(contentLength, 10);
@@ -125,7 +134,7 @@ export function getRequestMetadata(request: Request): any {
     url: request.url,
     user_agent: request.headers.get('user-agent'),
     cf_country: request.cf?.country,
-    cf_ray: request.headers.get('cf-ray')
+    cf_ray: request.headers.get('cf-ray'),
   };
 }
 
@@ -139,10 +148,10 @@ export function sanitizeForLog(text: string, maxLength: number = 200): string {
     .replace(/\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/g, '[EMAIL]') // Email addresses
     .replace(/\b\d{3}-\d{3}-\d{4}\b/g, '[PHONE]') // Phone numbers
     .replace(/\b\d{16}\b/g, '[CARD]'); // Credit card numbers (basic pattern)
-  
-  return sanitized.length > maxLength ? 
-    sanitized.substring(0, maxLength) + '...' : 
-    sanitized;
+
+  return sanitized.length > maxLength
+    ? sanitized.substring(0, maxLength) + '...'
+    : sanitized;
 }
 
 /**
@@ -150,20 +159,24 @@ export function sanitizeForLog(text: string, maxLength: number = 200): string {
  */
 const requestCounts = new Map<string, { count: number; resetTime: number }>();
 
-export function checkRateLimit(clientId: string, maxRequests: number = 100, windowMs: number = 60000): boolean {
+export function checkRateLimit(
+  clientId: string,
+  maxRequests: number = 100,
+  windowMs: number = 60000
+): boolean {
   const now = Date.now();
   const key = clientId;
-  
+
   const existing = requestCounts.get(key);
   if (!existing || now > existing.resetTime) {
     requestCounts.set(key, { count: 1, resetTime: now + windowMs });
     return true;
   }
-  
+
   if (existing.count >= maxRequests) {
     return false;
   }
-  
+
   existing.count++;
   return true;
 }

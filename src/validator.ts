@@ -1,49 +1,158 @@
-import { ResumeData, Skill, Experience, SalaryExpectation } from './types';
+import {
+  ResumeData,
+  Skill,
+  Experience,
+  SalaryExpectation,
+  ValidationError,
+  PartialResumeData,
+} from './types';
 
 export interface ValidationResult {
   isValid: boolean;
   errors: string[];
   warnings: string[];
+  validation_errors?: ValidationError[];
+  partial_fields?: string[];
+  confidence_scores?: { [key: string]: number };
 }
 
 /**
  * Validates resume data against the schema requirements
  */
 export function validateResumeData(
-  data: Partial<ResumeData>
+  data: Partial<ResumeData>,
+  options: { flexible_validation?: boolean; strict_validation?: boolean } = {}
 ): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
+  const validationErrors: ValidationError[] = [];
+  const partialFields: string[] = [];
+  const confidenceScores: { [key: string]: number } = {};
 
-  // Validate required fields
+  const { flexible_validation = false, strict_validation = false } = options;
+
+  // Validate required fields with flexible validation support
   if (!data.desired_titles || data.desired_titles.length === 0) {
-    errors.push('desired_titles is required and must not be empty');
+    const error = {
+      field: 'desired_titles',
+      error: 'missing' as const,
+      suggestion:
+        "Add 'Desired Position' or 'Objective' section to your resume",
+      severity: (flexible_validation ? 'warning' : 'error') as
+        | 'warning'
+        | 'error',
+    };
+    validationErrors.push(error);
+
+    if (flexible_validation) {
+      partialFields.push('desired_titles');
+      confidenceScores.desired_titles = 0;
+      warnings.push(
+        'desired_titles is missing - consider adding desired position information'
+      );
+    } else {
+      errors.push('desired_titles is required and must not be empty');
+    }
   } else {
     // Check uniqueness and non-empty titles
     const uniqueTitles = new Set(data.desired_titles);
     if (uniqueTitles.size !== data.desired_titles.length) {
+      validationErrors.push({
+        field: 'desired_titles',
+        error: 'duplicate',
+        suggestion:
+          'Remove duplicate job titles from the desired positions list',
+        severity: 'warning',
+      });
       warnings.push('desired_titles contains duplicates');
     }
 
     if (data.desired_titles.some(title => !title.trim())) {
+      validationErrors.push({
+        field: 'desired_titles',
+        error: 'empty',
+        suggestion: 'Remove empty entries from desired job titles',
+        severity: 'error',
+      });
       errors.push('desired_titles cannot contain empty strings');
+    } else {
+      confidenceScores.desired_titles = 0.9;
     }
   }
 
   if (!data.summary || data.summary.trim().length === 0) {
-    errors.push('summary is required and cannot be empty');
+    const error = {
+      field: 'summary',
+      error: 'missing' as const,
+      suggestion:
+        "Add a 'Professional Summary' or 'About' section describing your experience",
+      severity: (flexible_validation ? 'warning' : 'error') as
+        | 'warning'
+        | 'error',
+    };
+    validationErrors.push(error);
+
+    if (flexible_validation) {
+      partialFields.push('summary');
+      confidenceScores.summary = 0;
+      warnings.push(
+        'summary is missing - consider adding a professional summary'
+      );
+    } else {
+      errors.push('summary is required and cannot be empty');
+    }
+  } else {
+    confidenceScores.summary = Math.min(1.0, data.summary.length / 200); // Confidence based on length
   }
 
   if (!data.skills || data.skills.length === 0) {
-    errors.push('skills is required and must not be empty');
+    const error = {
+      field: 'skills',
+      error: 'missing' as const,
+      suggestion:
+        "Add a 'Skills' section listing your technical and soft skills",
+      severity: (flexible_validation ? 'warning' : 'error') as
+        | 'warning'
+        | 'error',
+    };
+    validationErrors.push(error);
+
+    if (flexible_validation) {
+      partialFields.push('skills');
+      confidenceScores.skills = 0;
+      warnings.push('skills section is missing - consider adding your skills');
+    } else {
+      errors.push('skills is required and must not be empty');
+    }
   } else {
-    validateSkills(data.skills, errors, warnings);
+    validateSkills(data.skills, errors, warnings, validationErrors);
+    confidenceScores.skills = Math.min(1.0, data.skills.length / 10); // Confidence based on number of skills
   }
 
   if (!data.experience || data.experience.length === 0) {
-    errors.push('experience is required and must not be empty');
+    const error = {
+      field: 'experience',
+      error: 'missing' as const,
+      suggestion:
+        "Add an 'Experience' or 'Work History' section with your previous positions",
+      severity: (flexible_validation ? 'warning' : 'error') as
+        | 'warning'
+        | 'error',
+    };
+    validationErrors.push(error);
+
+    if (flexible_validation) {
+      partialFields.push('experience');
+      confidenceScores.experience = 0;
+      warnings.push(
+        'experience section is missing - consider adding work history'
+      );
+    } else {
+      errors.push('experience is required and must not be empty');
+    }
   } else {
-    validateExperience(data.experience, errors, warnings);
+    validateExperience(data.experience, errors, warnings, validationErrors);
+    confidenceScores.experience = Math.min(1.0, data.experience.length / 3); // Confidence based on number of positions
   }
 
   // Validate optional fields
@@ -74,9 +183,14 @@ export function validateResumeData(
   }
 
   return {
-    isValid: errors.length === 0,
+    isValid:
+      errors.length === 0 &&
+      (flexible_validation || partialFields.length === 0),
     errors,
     warnings,
+    validation_errors: validationErrors,
+    partial_fields: partialFields,
+    confidence_scores: confidenceScores,
   };
 }
 
@@ -86,7 +200,8 @@ export function validateResumeData(
 function validateSkills(
   skills: Skill[],
   errors: string[],
-  warnings: string[]
+  warnings: string[],
+  validationErrors?: ValidationError[]
 ): void {
   skills.forEach((skill, index) => {
     if (typeof skill === 'string') {
@@ -158,7 +273,8 @@ function validateSkills(
 function validateExperience(
   experience: Experience[],
   errors: string[],
-  warnings: string[]
+  warnings: string[],
+  validationErrors?: ValidationError[]
 ): void {
   experience.forEach((exp, index) => {
     if (!exp.title || !exp.title.trim()) {

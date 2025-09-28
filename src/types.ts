@@ -82,19 +82,91 @@ export interface ProcessResumeRequest {
   options?: {
     include_unmapped?: boolean;
     strict_validation?: boolean;
+    flexible_validation?: boolean; // Allow partial results
+    callback_url?: string; // For progress callbacks
+    callback_secret?: string; // For callback authentication
+  };
+}
+
+// Streaming request types
+export interface ProcessResumeStreamRequest extends ProcessResumeRequest {
+  stream_id?: string; // Optional, will be generated if not provided
+}
+
+export interface ProcessResumeStreamResponse {
+  stream_id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  progress_percentage: number;
+  current_step?: string;
+  estimated_completion_time?: number; // milliseconds
+  result?: ProcessResumeResponse;
+  error?: string;
+}
+
+// Batch processing types
+export interface BatchResumeItem {
+  id: string;
+  resume_text: string;
+  language?: string;
+  options?: ProcessResumeRequest['options'];
+}
+
+export interface ProcessResumeBatchRequest {
+  resumes: BatchResumeItem[];
+  options?: {
+    max_concurrency?: number; // Default: 5
+    callback_url?: string;
+    callback_secret?: string;
+  };
+}
+
+export interface BatchResumeResult {
+  id: string;
+  status: 'pending' | 'processing' | 'completed' | 'failed';
+  result?: ProcessResumeResponse;
+  error?: string;
+}
+
+export interface ProcessResumeBatchResponse {
+  batch_id: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  total_resumes: number;
+  completed_count: number;
+  failed_count: number;
+  results: BatchResumeResult[];
+  estimated_completion_time?: number;
+}
+
+// Enhanced validation error with suggestions
+export interface ValidationError {
+  field: string;
+  error: 'missing' | 'invalid' | 'empty' | 'duplicate';
+  suggestion?: string;
+  severity: 'error' | 'warning';
+}
+
+// Partial data response with missing fields tracking
+export interface PartialResumeData extends ResumeData {
+  partial_fields?: string[];
+  confidence_scores?: {
+    [key: string]: number; // 0-1 confidence score for each field
   };
 }
 
 export interface ProcessResumeResponse {
   success: boolean;
-  data: ResumeData | null;
+  data: ResumeData | PartialResumeData | null;
   unmapped_fields: string[];
   errors: string[];
+  validation_errors?: ValidationError[];
+  partial_fields?: string[];
   processing_time_ms: number;
   metadata?: {
     worker_version: string;
     ai_model_used: string;
     timestamp: string;
+    format_detected?: 'chronological' | 'functional' | 'hybrid';
+    format_confidence?: number;
   };
 }
 

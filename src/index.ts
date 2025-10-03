@@ -493,9 +493,25 @@ async function handleProcessResumePdf(
       type: pdfFile.type,
     });
 
-    // Convert PDF to base64
+    // Convert PDF to base64 using a more robust method
     const pdfBuffer = await pdfFile.arrayBuffer();
-    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+    const uint8Array = new Uint8Array(pdfBuffer);
+    
+    // Convert to base64 in chunks to avoid string length limits
+    let binaryString = '';
+    const chunkSize = 8192; // Process in 8KB chunks
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      binaryString += String.fromCharCode(...chunk);
+    }
+    const pdfBase64 = btoa(binaryString);
+
+    console.log('📊 Base64 conversion info:', {
+      originalSize: pdfBuffer.byteLength,
+      binaryStringLength: binaryString.length,
+      base64Length: pdfBase64.length,
+      base64Preview: pdfBase64.substring(0, 50) + '...'
+    });
 
     console.log('📤 Sending PDF to PDF.co for text extraction...');
 

@@ -385,19 +385,23 @@ async function handleProcessResume(
       requestId,
       payloadKeys: Object.keys(logPayload),
       hasResumeData: !!logPayload.resumeData,
-      resumeDataKeys: logPayload.resumeData ? Object.keys(logPayload.resumeData) : null,
+      resumeDataKeys: logPayload.resumeData
+        ? Object.keys(logPayload.resumeData)
+        : null,
     });
 
-    // Log to database asynchronously (don't await to avoid blocking response)
-    logger
-      .logRequestSimple(requestId, '/process-resume', logPayload)
-      .catch(error => {
-        console.error('Database logging failed:', {
-          requestId,
-          error: error instanceof Error ? error.message : 'Unknown error',
-        });
-        // Silent fail - logging failures should not affect the main request
+    // Log to database synchronously (temporary debug change)
+    try {
+      await logger.logRequestSimple(requestId, '/process-resume', logPayload);
+      console.log('✅ Database logging completed successfully:', requestId);
+    } catch (error) {
+      console.error('❌ Database logging failed:', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
       });
+      // Don't throw - we still want to return the response
+    }
 
     return createSuccessResponse(response);
   } catch (error) {

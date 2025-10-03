@@ -539,13 +539,18 @@ async function handleProcessResumePdf(
     }
 
     const uploadResult = await uploadResponse.json();
-    console.log('PDF.co upload response:', {
-      success: uploadResult.success,
-      url: uploadResult.url
-    });
+    console.log('PDF.co upload response (full):', JSON.stringify(uploadResult, null, 2));
 
-    if (!uploadResult.success || !uploadResult.url) {
-      throw new Error(`PDF.co upload failed: ${uploadResult.message || 'No URL returned'}`);
+    if (!uploadResult.success) {
+      throw new Error(`PDF.co upload failed: ${uploadResult.message || 'Upload unsuccessful'}`);
+    }
+
+    // Check for different possible URL field names
+    const fileUrl = uploadResult.url || uploadResult.fileUrl || uploadResult.file_url || uploadResult.downloadUrl;
+    
+    if (!fileUrl) {
+      console.error('No URL found in upload response. Available fields:', Object.keys(uploadResult));
+      throw new Error(`PDF.co upload failed: No URL returned. Response: ${JSON.stringify(uploadResult)}`);
     }
 
     console.log('📤 Step 2: Converting PDF to text...');
@@ -558,7 +563,7 @@ async function handleProcessResumePdf(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url: uploadResult.url,
+        url: fileUrl,
         inline: true,
         password: '',
         pages: '1-10',

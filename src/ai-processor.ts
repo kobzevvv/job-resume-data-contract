@@ -65,17 +65,27 @@ export async function processResumeWithAI(
     }
 
     // Always apply experience description fallback if missing or empty
-    if (extractedData && extractedData.experience && Array.isArray(extractedData.experience)) {
+    if (
+      extractedData &&
+      extractedData.experience &&
+      Array.isArray(extractedData.experience)
+    ) {
       extractedData.experience = extractedData.experience.map((exp: any) => {
         if (!exp.description || exp.description.trim().length === 0) {
           // Generate a meaningful description based on job title and company
           const title = exp.title || 'Position';
           const employer = exp.employer || 'Company';
-          
+
           // Choose description based on job title keywords
-          if (title.toLowerCase().includes('engineer') || title.toLowerCase().includes('developer')) {
+          if (
+            title.toLowerCase().includes('engineer') ||
+            title.toLowerCase().includes('developer')
+          ) {
             exp.description = `Developed and maintained software solutions, collaborated with cross-functional teams, and contributed to technical projects at ${employer}`;
-          } else if (title.toLowerCase().includes('manager') || title.toLowerCase().includes('lead')) {
+          } else if (
+            title.toLowerCase().includes('manager') ||
+            title.toLowerCase().includes('lead')
+          ) {
             exp.description = `Led team initiatives, managed projects, and coordinated with stakeholders to achieve business objectives at ${employer}`;
           } else if (title.toLowerCase().includes('analyst')) {
             exp.description = `Analyzed data and business processes, provided insights and recommendations to support decision-making at ${employer}`;
@@ -598,7 +608,7 @@ function applyFallbackExtraction(
         // Generate a meaningful description based on job title and company
         const title = exp.title || 'Position';
         const employer = exp.employer || 'Company';
-        
+
         // Create a generic but meaningful description
         const genericDescriptions = [
           `Responsible for ${title.toLowerCase()} duties at ${employer}`,
@@ -606,16 +616,25 @@ function applyFallbackExtraction(
           `Worked as ${title} at ${employer}, contributing to company goals and projects`,
           `Focused on ${title.toLowerCase()} tasks and professional development`,
         ];
-        
+
         // Choose description based on job title keywords
-        if (title.toLowerCase().includes('engineer') || title.toLowerCase().includes('developer')) {
+        if (
+          title.toLowerCase().includes('engineer') ||
+          title.toLowerCase().includes('developer')
+        ) {
           exp.description = `Developed and maintained software solutions, collaborated with cross-functional teams, and contributed to technical projects at ${employer}`;
-        } else if (title.toLowerCase().includes('manager') || title.toLowerCase().includes('lead')) {
+        } else if (
+          title.toLowerCase().includes('manager') ||
+          title.toLowerCase().includes('lead')
+        ) {
           exp.description = `Led team initiatives, managed projects, and coordinated with stakeholders to achieve business objectives at ${employer}`;
         } else if (title.toLowerCase().includes('analyst')) {
           exp.description = `Analyzed data and business processes, provided insights and recommendations to support decision-making at ${employer}`;
         } else {
-          exp.description = genericDescriptions[Math.floor(Math.random() * genericDescriptions.length)];
+          exp.description =
+            genericDescriptions[
+              Math.floor(Math.random() * genericDescriptions.length)
+            ];
         }
       }
       return exp;

@@ -243,4 +243,3 @@ time node tests/pdf-test-runner.js          # Measure test duration
 ```bash
 node tests/manual-pdf-test.js
 ```
-

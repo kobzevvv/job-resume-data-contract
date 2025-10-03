@@ -208,4 +208,3 @@ testPDFManually(pdfPath).catch(error => {
   console.error('❌ Manual test failed:', error);
   process.exit(1);
 });
-

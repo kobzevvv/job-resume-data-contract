@@ -375,6 +375,8 @@ async function handleProcessResume(
       errors: response.errors,
       unmappedFields: response.unmapped_fields,
       metadata: response.metadata,
+      // Add the actual structured resume JSON output
+      resumeData: response.data,
     };
 
     // Log to database asynchronously (don't await to avoid blocking response)

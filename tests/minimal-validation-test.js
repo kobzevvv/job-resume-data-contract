@@ -156,7 +156,7 @@ async function testMinimalResumeExtraction() {
     ];
 
     let passedTests = 0;
-    let totalTests = tests.length;
+    const totalTests = tests.length;
 
     console.log('🔍 Running Validation Tests:\n');
 

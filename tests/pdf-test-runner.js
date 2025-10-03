@@ -6,7 +6,7 @@
  */
 
 import { readFileSync, readdirSync, existsSync, mkdirSync } from 'fs';
-import { join, dirname, extname } from 'path';
+import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);

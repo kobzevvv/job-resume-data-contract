@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 
-/**
- * Alternative PDF Processing Solutions
- * Since R2 is not enabled, let's explore other options
- */
+/\*\*
+
+- Alternative PDF Processing Solutions
+- Since R2 is not enabled, let's explore other options
+  \*/
 
 console.log('🔍 Alternative PDF Processing Solutions');
 console.log('=====================================\n');

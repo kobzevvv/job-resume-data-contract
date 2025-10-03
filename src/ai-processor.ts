@@ -704,13 +704,13 @@ function applyFallbackExtraction(
           pattern.source.includes('relocate')
         ) {
           fallbackData.location_preference = {
-            type: 'flexible',
+            type: 'remote',
             preferred_locations: [],
           };
           break;
         } else if (match[1]) {
           fallbackData.location_preference = {
-            type: 'specific',
+            type: 'onsite',
             preferred_locations: [match[1].trim()],
           };
           break;
@@ -742,24 +742,59 @@ function applyFallbackExtraction(
       const match = resumeText.match(pattern);
       if (match) {
         if (match[1]) {
-          fallbackData.schedule = match[1].trim();
+          const scheduleValue = match[1].trim().toLowerCase();
+          // Map common schedule values to enum values
+          if (
+            scheduleValue.includes('full') ||
+            scheduleValue.includes('полный')
+          ) {
+            fallbackData.schedule = 'full_time';
+          } else if (
+            scheduleValue.includes('part') ||
+            scheduleValue.includes('частичн')
+          ) {
+            fallbackData.schedule = 'part_time';
+          } else if (
+            scheduleValue.includes('contract') ||
+            scheduleValue.includes('контракт')
+          ) {
+            fallbackData.schedule = 'contract';
+          } else if (
+            scheduleValue.includes('freelance') ||
+            scheduleValue.includes('фриланс')
+          ) {
+            fallbackData.schedule = 'freelance';
+          } else if (
+            scheduleValue.includes('intern') ||
+            scheduleValue.includes('стажир')
+          ) {
+            fallbackData.schedule = 'internship';
+          } else if (
+            scheduleValue.includes('temp') ||
+            scheduleValue.includes('временн')
+          ) {
+            fallbackData.schedule = 'temporary';
+          } else {
+            // Default to full_time if we can't determine
+            fallbackData.schedule = 'full_time';
+          }
         } else {
           // Extract from pattern source
           if (
             pattern.source.includes('полный день') ||
             pattern.source.includes('full-time')
           ) {
-            fallbackData.schedule = 'Full-time';
+            fallbackData.schedule = 'full_time';
           } else if (
             pattern.source.includes('частичная') ||
             pattern.source.includes('part-time')
           ) {
-            fallbackData.schedule = 'Part-time';
+            fallbackData.schedule = 'part_time';
           } else if (
             pattern.source.includes('удаленная') ||
             pattern.source.includes('remote')
           ) {
-            fallbackData.schedule = 'Remote work';
+            fallbackData.schedule = 'contract';
           }
         }
         break;

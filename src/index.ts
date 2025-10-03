@@ -27,6 +27,25 @@ import {
   PartialResumeData,
 } from './types';
 
+// PDF.co API response interfaces
+interface PdfCoUploadResponse {
+  error?: boolean;
+  url?: string;
+  credits?: number;
+  remainingCredits?: number;
+  message?: string;
+}
+
+interface PdfCoConvertResponse {
+  error?: boolean;
+  body?: string;
+  pages?: number;
+  message?: string;
+  status?: string;
+  credits?: number;
+  remainingCredits?: number;
+}
+
 // Worker version for tracking
 const WORKER_VERSION = '1.0.0';
 
@@ -504,11 +523,15 @@ async function handleProcessResumePdf(
 
     // Parse form data
     const formData = await request.formData();
-    const pdfFile = formData.get('pdf') as File;
+    const pdfFile = formData.get('pdf') as File | null;
     const language = (formData.get('language') as string) || 'en';
     const options = {
       flexible_validation: formData.get('flexible_validation') === 'true',
       strict_validation: formData.get('strict_validation') === 'true',
+    };
+    const aiOptions = {
+      use_fallback: !options.strict_validation,
+      detect_format: true,
     };
 
     if (!pdfFile) {
@@ -567,7 +590,7 @@ async function handleProcessResumePdf(
     const uploadResponse = await fetch('https://api.pdf.co/v1/file/upload', {
       method: 'POST',
       headers: {
-        'x-api-key': env.PDF_CO_API_KEY,
+        'x-api-key': env.PDF_CO_API_KEY || '',
       },
       body: uploadFormData,
     });
@@ -584,7 +607,7 @@ async function handleProcessResumePdf(
       );
     }
 
-    const uploadResult = await uploadResponse.json();
+    const uploadResult = (await uploadResponse.json()) as PdfCoUploadResponse;
     console.log('PDF.co upload response:', {
       success: !uploadResult.error,
       url: uploadResult.url,
@@ -620,7 +643,7 @@ async function handleProcessResumePdf(
       {
         method: 'POST',
         headers: {
-          'x-api-key': env.PDF_CO_API_KEY,
+          'x-api-key': env.PDF_CO_API_KEY || '',
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -643,7 +666,8 @@ async function handleProcessResumePdf(
       );
     }
 
-    const convertResult = await convertResponse.json();
+    const convertResult =
+      (await convertResponse.json()) as PdfCoConvertResponse;
     console.log('PDF.co text extraction response:', {
       error: convertResult.error,
       status: convertResult.status,
@@ -658,7 +682,10 @@ async function handleProcessResumePdf(
       );
     }
 
-    const extractedText = convertResult.body;
+    const extractedText = convertResult.body || '';
+    if (!extractedText) {
+      throw new Error('PDF.co text extraction returned empty text');
+    }
     console.log(
       '✅ PDF text extracted successfully:',
       extractedText.length,
@@ -670,22 +697,22 @@ async function handleProcessResumePdf(
       extractedText,
       env,
       language,
-      options
+      aiOptions
     );
 
     // Create response object
     const responseData: ProcessResumeResponse = {
       success: !!response.data, // Success if we have data
-      data: response.data,
+      data: response.data as ResumeData | PartialResumeData | null,
       errors: [],
       unmapped_fields: response.unmapped_fields || [],
       partial_fields: [],
       processing_time_ms: getElapsed(),
       metadata: {
         worker_version: WORKER_VERSION,
-        ai_model_used: env.AI?.model || 'unknown',
+        ai_model_used: 'ai-model', // AI model identifier
         timestamp: new Date().toISOString(),
-        format_detected: response.format_detected || 'pdf',
+        format_detected: response.format_detected || 'hybrid',
         format_confidence: response.format_confidence || 1.0,
       },
     };
@@ -749,7 +776,10 @@ async function handleProcessResumePdf(
 
     return createSuccessResponse(responseData);
   } catch (error) {
-    console.error('❌ PDF processing failed:', error.message);
+    console.error(
+      '❌ PDF processing failed:',
+      error instanceof Error ? error.message : String(error)
+    );
 
     return new Response(
       JSON.stringify({

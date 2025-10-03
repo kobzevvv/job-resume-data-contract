@@ -5,12 +5,7 @@
  * Compares Russian resume processing with and without explicit language parameter
  */
 
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// Configuration imports removed as they're not used in this test
 
 // Configuration
 const WORKER_URL =

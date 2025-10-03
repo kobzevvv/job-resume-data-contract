@@ -10,13 +10,41 @@ ENVIRONMENT = "development"
 [ai]
 binding = "AI"
 
+# D1 Database binding for logging
+[[d1_databases]]
+binding = "RESUME_DB"
+database_name = "resume-processor-logs"
+database_id = "e08bcfcc-9503-4de6-8a71-0564ba2bc695"
+
 # Environment-specific configurations
 [env.staging]
 name = "resume-processor-staging"
 [env.staging.vars]
+WORKER_TYPE = "resume-processor"
 ENVIRONMENT = "staging"
+
+# Staging AI binding
+[env.staging.ai]
+binding = "AI"
+
+# Staging D1 Database binding
+[[env.staging.d1_databases]]
+binding = "RESUME_DB"
+database_name = "resume-processor-logs"
+database_id = "e08bcfcc-9503-4de6-8a71-0564ba2bc695"
 
 [env.production]
 name = "resume-processor-production"
 [env.production.vars]
-ENVIRONMENT = "production" 
+WORKER_TYPE = "resume-processor"
+ENVIRONMENT = "production"
+
+# Production AI binding
+[env.production.ai]
+binding = "AI"
+
+# Production D1 Database binding (same database for now)
+[[env.production.d1_databases]]
+binding = "RESUME_DB"
+database_name = "resume-processor-logs"
+database_id = "e08bcfcc-9503-4de6-8a71-0564ba2bc695"

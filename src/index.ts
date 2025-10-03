@@ -516,15 +516,15 @@ async function handleProcessResumePdf(
     console.log('📤 Step 1: Uploading PDF to PDF.co...');
 
     // Step 1: Upload PDF to PDF.co using multipart form data
-    const formData = new FormData();
-    formData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), pdfFile.name || 'resume.pdf');
+    const uploadFormData = new FormData();
+    uploadFormData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), pdfFile.name || 'resume.pdf');
     
     const uploadResponse = await fetch('https://api.pdf.co/v1/file/upload', {
       method: 'POST',
       headers: {
         'x-api-key': env.PDF_CO_API_KEY,
       },
-      body: formData,
+      body: uploadFormData,
     });
 
     if (!uploadResponse.ok) {

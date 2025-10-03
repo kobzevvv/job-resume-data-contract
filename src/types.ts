@@ -4,6 +4,7 @@ export interface Env {
   WORKER_TYPE?: string;
   ENVIRONMENT?: string;
   RESUME_DB?: D1Database; // Add D1 database binding
+  PDF_CO_API_KEY?: string; // Add PDF.co API key
 }
 
 // Skill type definitions based on schema

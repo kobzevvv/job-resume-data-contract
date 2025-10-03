@@ -168,9 +168,22 @@ export function validateResumeData(
       'freelance',
       'internship',
       'temporary',
+      'полный день',
+      'частичная занятость',
+      'удаленная работа',
+      'Full-time',
+      'Part-time',
+      'Remote work',
     ];
     if (!validSchedules.includes(data.schedule)) {
-      errors.push(`Invalid schedule: ${data.schedule}`);
+      // For flexible validation, just warn instead of error
+      if (flexible_validation) {
+        warnings.push(
+          `Schedule format may need standardization: ${data.schedule}`
+        );
+      } else {
+        errors.push(`Invalid schedule: ${data.schedule}`);
+      }
     }
   }
 
@@ -314,7 +327,7 @@ function validateLocationPreference(
   warnings: string[]
 ): void {
   if (locationPref.type) {
-    const validTypes = ['remote', 'hybrid', 'onsite'];
+    const validTypes = ['remote', 'hybrid', 'onsite', 'specific', 'flexible'];
     if (!validTypes.includes(locationPref.type)) {
       errors.push(`Invalid location preference type: ${locationPref.type}`);
     }

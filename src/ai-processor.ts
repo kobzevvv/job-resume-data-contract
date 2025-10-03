@@ -147,9 +147,13 @@ function createExtractionPrompt(
 
 {
   "desired_titles": ["желаемые должности"],
-  "summary": "профессиональное резюме",
+  "summary": "профессиональное резюме (минимум 100 символов, опишите опыт, навыки и достижения)",
   "skills": [{"name": "навык", "level": 1-5, "type": "programming_language"}],
-  "experience": [{"employer": "компания", "title": "должность", "start": "YYYY-MM", "end": "YYYY-MM", "description": "подробное описание обязанностей и достижений"}]
+  "experience": [{"employer": "компания", "title": "должность", "start": "YYYY-MM", "end": "YYYY-MM", "description": "подробное описание обязанностей и достижений"}],
+  "location_preference": {"type": "specific|flexible", "preferred_locations": ["город"]},
+  "schedule": "график работы",
+  "availability": "доступность",
+  "links": [{"label": "тип ссылки", "url": "URL"}]
 }
 
 Ключевые правила:
@@ -162,6 +166,11 @@ function createExtractionPrompt(
 - Распознавайте русские сокращения: сен=сентябрь, авг=август, дек=декабрь и т.д.
 - ВСЕГДА включайте подробное описание для каждой записи опыта работы
 - Если конкретное описание недоступно, создайте осмысленное описание на основе должности и компании
+- Для summary: извлеките информацию из раздела "Обо мне", "Дополнительная информация" или создайте краткое резюме на основе опыта работы
+- Для location_preference: извлеките информацию о городе проживания или готовности к переезду
+- Для schedule: извлеките информацию о графике работы (полный день, частичная занятость, удаленная работа)
+- Для availability: извлеките информацию о готовности к работе
+- Для links: найдите ссылки на GitHub, LinkedIn, Telegram и другие профили
 
 Резюме:
 ${resumeText}
@@ -175,9 +184,13 @@ Parse this resume and return valid JSON:
 
 {
   "desired_titles": ["job titles wanted"],
-  "summary": "professional summary",
+  "summary": "professional summary (minimum 100 characters, describe experience, skills and achievements)",
   "skills": [{"name": "skill", "level": 1-5, "type": "programming_language"}],
-  "experience": [{"employer": "company", "title": "role", "start": "YYYY-MM", "end": "YYYY-MM", "description": "detailed description of responsibilities and achievements"}]
+  "experience": [{"employer": "company", "title": "role", "start": "YYYY-MM", "end": "YYYY-MM", "description": "detailed description of responsibilities and achievements"}],
+  "location_preference": {"type": "specific|flexible", "preferred_locations": ["city"]},
+  "schedule": "work schedule",
+  "availability": "availability",
+  "links": [{"label": "link type", "url": "URL"}]
 }
 
 Key rules:
@@ -186,6 +199,11 @@ Key rules:
 - Skill levels: 1=Basic, 2=Limited, 3=Proficient, 4=Advanced, 5=Expert
 - ALWAYS include a detailed description for each experience entry
 - If no specific description is available, create a meaningful description based on the job title and company
+- For summary: extract information from "About", "Profile", or "Additional Information" sections, or create a brief summary based on work experience
+- For location_preference: extract information about city of residence or willingness to relocate
+- For schedule: extract information about work schedule (full-time, part-time, remote work)
+- For availability: extract information about readiness to work
+- For links: find links to GitHub, LinkedIn, and other profiles
 
 Resume:
 ${resumeText}
@@ -504,19 +522,22 @@ function applyFallbackExtraction(
   }
 
   // Fallback patterns for summary
-  if (!fallbackData.summary || fallbackData.summary.trim().length === 0) {
+  if (!fallbackData.summary || fallbackData.summary.trim().length < 50) {
     const summaryPatterns =
       language === 'ru'
         ? [
             /профессиональный профиль\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-ZА-Я]|\n\d|$)/is,
             /о себе\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-ZА-Я]|\n\d|$)/is,
             /резюме\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-ZА-Я]|\n\d|$)/is,
+            /дополнительная информация\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-ZА-Я]|\n\d|$)/is,
+            /обо мне\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-ZА-Я]|\n\d|$)/is,
           ]
         : [
             /professional summary\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-Z]|\n\d|$)/is,
             /summary\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-Z]|\n\d|$)/is,
             /about\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-Z]|\n\d|$)/is,
             /profile\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-Z]|\n\d|$)/is,
+            /about me\s*[:\-]?\s*(.+?)(?=\n\n|\n[A-Z]|\n\d|$)/is,
           ];
 
     for (const pattern of summaryPatterns) {
@@ -524,6 +545,22 @@ function applyFallbackExtraction(
       if (match && match[1] && match[1].trim().length > 50) {
         fallbackData.summary = match[1].trim();
         break;
+      }
+    }
+
+    // If still no good summary, try to extract from experience descriptions
+    if (!fallbackData.summary || fallbackData.summary.trim().length < 50) {
+      if (fallbackData.experience && Array.isArray(fallbackData.experience)) {
+        const recentExperience = fallbackData.experience[0];
+        if (recentExperience && recentExperience.description) {
+          // Use the first part of the most recent job description as summary
+          const description = recentExperience.description;
+          if (description.length > 100) {
+            fallbackData.summary = description.substring(0, 300) + '...';
+          } else {
+            fallbackData.summary = description;
+          }
+        }
       }
     }
   }
@@ -639,6 +676,198 @@ function applyFallbackExtraction(
       }
       return exp;
     });
+  }
+
+  // Fallback patterns for location preference
+  if (!fallbackData.location_preference) {
+    const locationPatterns =
+      language === 'ru'
+        ? [
+            /проживает\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /местоположение\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /город\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /готова к переезду/i,
+            /готов к переезду/i,
+          ]
+        : [
+            /location\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /based in\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /willing to relocate/i,
+            /remote work/i,
+          ];
+
+    for (const pattern of locationPatterns) {
+      const match = resumeText.match(pattern);
+      if (match) {
+        if (
+          pattern.source.includes('переезд') ||
+          pattern.source.includes('relocate')
+        ) {
+          fallbackData.location_preference = {
+            type: 'remote',
+            preferred_locations: [],
+          };
+          break;
+        } else if (match[1]) {
+          fallbackData.location_preference = {
+            type: 'onsite',
+            preferred_locations: [match[1].trim()],
+          };
+          break;
+        }
+      }
+    }
+  }
+
+  // Fallback patterns for schedule
+  if (!fallbackData.schedule) {
+    const schedulePatterns =
+      language === 'ru'
+        ? [
+            /график работы\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /занятость\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /полный день/i,
+            /частичная занятость/i,
+            /удаленная работа/i,
+          ]
+        : [
+            /schedule\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /employment\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /full-time/i,
+            /part-time/i,
+            /remote work/i,
+          ];
+
+    for (const pattern of schedulePatterns) {
+      const match = resumeText.match(pattern);
+      if (match) {
+        if (match[1]) {
+          const scheduleValue = match[1].trim().toLowerCase();
+          // Map common schedule values to enum values
+          if (
+            scheduleValue.includes('full') ||
+            scheduleValue.includes('полный')
+          ) {
+            fallbackData.schedule = 'full_time';
+          } else if (
+            scheduleValue.includes('part') ||
+            scheduleValue.includes('частичн')
+          ) {
+            fallbackData.schedule = 'part_time';
+          } else if (
+            scheduleValue.includes('contract') ||
+            scheduleValue.includes('контракт')
+          ) {
+            fallbackData.schedule = 'contract';
+          } else if (
+            scheduleValue.includes('freelance') ||
+            scheduleValue.includes('фриланс')
+          ) {
+            fallbackData.schedule = 'freelance';
+          } else if (
+            scheduleValue.includes('intern') ||
+            scheduleValue.includes('стажир')
+          ) {
+            fallbackData.schedule = 'internship';
+          } else if (
+            scheduleValue.includes('temp') ||
+            scheduleValue.includes('временн')
+          ) {
+            fallbackData.schedule = 'temporary';
+          } else {
+            // Default to full_time if we can't determine
+            fallbackData.schedule = 'full_time';
+          }
+        } else {
+          // Extract from pattern source
+          if (
+            pattern.source.includes('полный день') ||
+            pattern.source.includes('full-time')
+          ) {
+            fallbackData.schedule = 'full_time';
+          } else if (
+            pattern.source.includes('частичная') ||
+            pattern.source.includes('part-time')
+          ) {
+            fallbackData.schedule = 'part_time';
+          } else if (
+            pattern.source.includes('удаленная') ||
+            pattern.source.includes('remote')
+          ) {
+            fallbackData.schedule = 'contract';
+          }
+        }
+        break;
+      }
+    }
+  }
+
+  // Fallback patterns for availability
+  if (!fallbackData.availability) {
+    const availabilityPatterns =
+      language === 'ru'
+        ? [
+            /готовность к работе\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /доступность\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /готов к работе/i,
+            /готов начать/i,
+            /сразу/i,
+            /немедленно/i,
+          ]
+        : [
+            /availability\s*[:\-]?\s*(.+?)(?=\n|$)/i,
+            /ready to work/i,
+            /available immediately/i,
+            /can start/i,
+          ];
+
+    for (const pattern of availabilityPatterns) {
+      const match = resumeText.match(pattern);
+      if (match) {
+        if (match[1]) {
+          fallbackData.availability = match[1].trim();
+        } else {
+          fallbackData.availability = 'Available immediately';
+        }
+        break;
+      }
+    }
+  }
+
+  // Fallback patterns for links
+  if (!fallbackData.links || fallbackData.links.length === 0) {
+    const linkPatterns = [
+      /github\.com\/[a-zA-Z0-9_-]+/gi,
+      /linkedin\.com\/in\/[a-zA-Z0-9_-]+/gi,
+      /t\.me\/[a-zA-Z0-9_-]+/gi,
+      /https?:\/\/[^\s]+/gi,
+    ];
+
+    const foundLinks: any[] = [];
+    for (const pattern of linkPatterns) {
+      const matches = resumeText.match(pattern);
+      if (matches) {
+        matches.forEach(url => {
+          let label = 'Link';
+          if (url.includes('github.com')) {
+            label = 'GitHub';
+          } else if (url.includes('linkedin.com')) {
+            label = 'LinkedIn';
+          } else if (url.includes('t.me')) {
+            label = 'Telegram';
+          }
+
+          foundLinks.push({
+            label,
+            url: url.startsWith('http') ? url : `https://${url}`,
+          });
+        });
+      }
+    }
+
+    if (foundLinks.length > 0) {
+      fallbackData.links = foundLinks;
+    }
   }
 
   return {

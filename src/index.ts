@@ -513,52 +513,81 @@ async function handleProcessResumePdf(
       base64Preview: pdfBase64.substring(0, 50) + '...',
     });
 
-    console.log('📤 Sending PDF to PDF.co for text extraction...');
+    console.log('📤 Step 1: Uploading PDF to PDF.co...');
 
-    // Send to PDF.co for text extraction
-    const pdfCoResponse = await fetch(
-      'https://api.pdf.co/v1/pdf/convert/to/text',
-      {
-        method: 'POST',
-        headers: {
-          'x-api-key': env.PDF_CO_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          file: pdfBase64,
-          inline: true,
-          password: '', // Add password if needed
-          pages: '1-10', // Specify page range
-          ocrMode: 'auto' // Enable OCR if needed
-        }),
-      }
-    );
-
-    if (!pdfCoResponse.ok) {
-      // Get detailed error information
-      const errorText = await pdfCoResponse.text();
-      console.error('PDF.co API error details:', {
-        status: pdfCoResponse.status,
-        statusText: pdfCoResponse.statusText,
-        errorBody: errorText
-      });
-      throw new Error(
-        `PDF.co API error: ${pdfCoResponse.status} ${pdfCoResponse.statusText} - ${errorText}`
-      );
-    }
-
-    const pdfCoResult = await pdfCoResponse.json();
-    console.log('PDF.co API response:', {
-      success: pdfCoResult.success,
-      message: pdfCoResult.message,
-      hasBody: !!pdfCoResult.body
+    // Step 1: Upload PDF to PDF.co
+    const uploadResponse = await fetch('https://api.pdf.co/v1/file/upload/base64', {
+      method: 'POST',
+      headers: {
+        'x-api-key': env.PDF_CO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file: pdfBase64,
+        fileName: pdfFile.name || 'resume.pdf'
+      }),
     });
 
-    if (!pdfCoResult.success) {
-      throw new Error(`PDF.co extraction failed: ${pdfCoResult.message}`);
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('PDF.co upload error:', {
+        status: uploadResponse.status,
+        statusText: uploadResponse.statusText,
+        errorBody: errorText
+      });
+      throw new Error(`PDF.co upload error: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`);
     }
 
-    const extractedText = pdfCoResult.body;
+    const uploadResult = await uploadResponse.json();
+    console.log('PDF.co upload response:', {
+      success: uploadResult.success,
+      url: uploadResult.url
+    });
+
+    if (!uploadResult.success || !uploadResult.url) {
+      throw new Error(`PDF.co upload failed: ${uploadResult.message || 'No URL returned'}`);
+    }
+
+    console.log('📤 Step 2: Converting PDF to text...');
+
+    // Step 2: Convert PDF to text using the uploaded file URL
+    const convertResponse = await fetch('https://api.pdf.co/v1/pdf/convert/to/text', {
+      method: 'POST',
+      headers: {
+        'x-api-key': env.PDF_CO_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        url: uploadResult.url,
+        inline: true,
+        password: '',
+        pages: '1-10',
+        ocrMode: 'auto'
+      }),
+    });
+
+    if (!convertResponse.ok) {
+      const errorText = await convertResponse.text();
+      console.error('PDF.co conversion error:', {
+        status: convertResponse.status,
+        statusText: convertResponse.statusText,
+        errorBody: errorText
+      });
+      throw new Error(`PDF.co conversion error: ${convertResponse.status} ${convertResponse.statusText} - ${errorText}`);
+    }
+
+    const convertResult = await convertResponse.json();
+    console.log('PDF.co conversion response:', {
+      success: convertResult.success,
+      message: convertResult.message,
+      hasBody: !!convertResult.body
+    });
+
+    if (!convertResult.success) {
+      throw new Error(`PDF.co conversion failed: ${convertResult.message}`);
+    }
+
+    const extractedText = convertResult.body;
     console.log(
       '✅ PDF text extracted successfully:',
       extractedText.length,

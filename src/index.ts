@@ -496,7 +496,7 @@ async function handleProcessResumePdf(
     // Convert PDF to base64 using a more robust method
     const pdfBuffer = await pdfFile.arrayBuffer();
     const uint8Array = new Uint8Array(pdfBuffer);
-    
+
     // Convert to base64 in chunks to avoid string length limits
     let binaryString = '';
     const chunkSize = 8192; // Process in 8KB chunks
@@ -510,7 +510,7 @@ async function handleProcessResumePdf(
       originalSize: pdfBuffer.byteLength,
       binaryStringLength: binaryString.length,
       base64Length: pdfBase64.length,
-      base64Preview: pdfBase64.substring(0, 50) + '...'
+      base64Preview: pdfBase64.substring(0, 50) + '...',
     });
 
     console.log('📤 Sending PDF to PDF.co for text extraction...');
@@ -528,17 +528,31 @@ async function handleProcessResumePdf(
           file: pdfBase64,
           inline: true,
           password: '', // Add password if needed
+          pages: '1-10', // Specify page range
+          ocrMode: 'auto' // Enable OCR if needed
         }),
       }
     );
 
     if (!pdfCoResponse.ok) {
+      // Get detailed error information
+      const errorText = await pdfCoResponse.text();
+      console.error('PDF.co API error details:', {
+        status: pdfCoResponse.status,
+        statusText: pdfCoResponse.statusText,
+        errorBody: errorText
+      });
       throw new Error(
-        `PDF.co API error: ${pdfCoResponse.status} ${pdfCoResponse.statusText}`
+        `PDF.co API error: ${pdfCoResponse.status} ${pdfCoResponse.statusText} - ${errorText}`
       );
     }
 
     const pdfCoResult = await pdfCoResponse.json();
+    console.log('PDF.co API response:', {
+      success: pdfCoResult.success,
+      message: pdfCoResult.message,
+      hasBody: !!pdfCoResult.body
+    });
 
     if (!pdfCoResult.success) {
       throw new Error(`PDF.co extraction failed: ${pdfCoResult.message}`);

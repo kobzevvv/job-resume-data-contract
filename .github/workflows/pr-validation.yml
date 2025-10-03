@@ -9,6 +9,11 @@ on:
       - 'package.json'
       - 'wrangler.toml'
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
 jobs:
   validate-resume-extraction:
     runs-on: ubuntu-latest

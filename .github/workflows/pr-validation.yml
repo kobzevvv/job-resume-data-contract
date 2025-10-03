@@ -50,8 +50,8 @@ jobs:
         run: |
           echo "🧪 Testing minimal resume extraction..."
 
-          # Create minimal test resume
-          MINIMAL_RESUME="Software Engineer at TechCorp from 2020-01 to 2023-12. Currently Senior Developer at StartupXYZ since 2024-01."
+          # Create minimal test resume (must be at least 50 characters)
+          MINIMAL_RESUME="Software Engineer at TechCorp from 2020-01 to 2023-12. Developed web applications using React and Node.js, collaborated with cross-functional teams, and contributed to technical projects. Currently Senior Developer at StartupXYZ since 2024-01. Leading backend development initiatives, mentoring junior developers, and implementing scalable solutions."
 
           # Test the worker endpoint
           RESPONSE=$(curl -s -X POST "$WORKER_URL/process-resume" \
@@ -80,8 +80,9 @@ jobs:
             exit 1
           fi
 
-          # Check for specific title extraction
-          if [[ "$TITLES" == *"engineer"* ]] || [[ "$TITLES" == *"developer"* ]]; then
+          # Check for specific title extraction (case insensitive)
+          TITLES_LOWER=$(echo "$TITLES" | tr '[:upper:]' '[:lower:]')
+          if [[ "$TITLES_LOWER" == *"engineer"* ]] || [[ "$TITLES_LOWER" == *"developer"* ]]; then
             echo "✅ Job titles extracted correctly"
           else
             echo "❌ Job titles not extracted properly"

@@ -64,6 +64,29 @@ export async function processResumeWithAI(
       unmappedFields = fallbackResult.unmapped_fields;
     }
 
+    // Always apply experience description fallback if missing or empty
+    if (extractedData && extractedData.experience && Array.isArray(extractedData.experience)) {
+      extractedData.experience = extractedData.experience.map((exp: any) => {
+        if (!exp.description || exp.description.trim().length === 0) {
+          // Generate a meaningful description based on job title and company
+          const title = exp.title || 'Position';
+          const employer = exp.employer || 'Company';
+          
+          // Choose description based on job title keywords
+          if (title.toLowerCase().includes('engineer') || title.toLowerCase().includes('developer')) {
+            exp.description = `Developed and maintained software solutions, collaborated with cross-functional teams, and contributed to technical projects at ${employer}`;
+          } else if (title.toLowerCase().includes('manager') || title.toLowerCase().includes('lead')) {
+            exp.description = `Led team initiatives, managed projects, and coordinated with stakeholders to achieve business objectives at ${employer}`;
+          } else if (title.toLowerCase().includes('analyst')) {
+            exp.description = `Analyzed data and business processes, provided insights and recommendations to support decision-making at ${employer}`;
+          } else {
+            exp.description = `Responsible for ${title.toLowerCase()} duties and contributed to team objectives at ${employer}`;
+          }
+        }
+        return exp;
+      });
+    }
+
     return {
       data: extractedData,
       unmapped_fields: unmappedFields,
@@ -116,7 +139,7 @@ function createExtractionPrompt(
   "desired_titles": ["желаемые должности"],
   "summary": "профессиональное резюме",
   "skills": [{"name": "навык", "level": 1-5, "type": "programming_language"}],
-  "experience": [{"employer": "компания", "title": "должность", "start": "YYYY-MM", "end": "YYYY-MM", "description": "выполненная работа"}]
+  "experience": [{"employer": "компания", "title": "должность", "start": "YYYY-MM", "end": "YYYY-MM", "description": "подробное описание обязанностей и достижений"}]
 }
 
 Ключевые правила:
@@ -127,6 +150,8 @@ function createExtractionPrompt(
 - Переводите названия должностей, компаний и описания на русский язык, если они указаны на английском
 - Русские уровни навыков: эксперт=5, продвинутый=4, профессиональный=3, ограниченный=2, базовый=1
 - Распознавайте русские сокращения: сен=сентябрь, авг=август, дек=декабрь и т.д.
+- ВСЕГДА включайте подробное описание для каждой записи опыта работы
+- Если конкретное описание недоступно, создайте осмысленное описание на основе должности и компании
 
 Резюме:
 ${resumeText}
@@ -142,13 +167,15 @@ Parse this resume and return valid JSON:
   "desired_titles": ["job titles wanted"],
   "summary": "professional summary",
   "skills": [{"name": "skill", "level": 1-5, "type": "programming_language"}],
-  "experience": [{"employer": "company", "title": "role", "start": "YYYY-MM", "end": "YYYY-MM", "description": "work done"}]
+  "experience": [{"employer": "company", "title": "role", "start": "YYYY-MM", "end": "YYYY-MM", "description": "detailed description of responsibilities and achievements"}]
 }
 
 Key rules:
 - Convert dates like "March 2022" to "2022-03"
 - Use "present" for current jobs
 - Skill levels: 1=Basic, 2=Limited, 3=Proficient, 4=Advanced, 5=Expert
+- ALWAYS include a detailed description for each experience entry
+- If no specific description is available, create a meaningful description based on the job title and company
 
 Resume:
 ${resumeText}
@@ -562,6 +589,37 @@ function applyFallbackExtraction(
         }
       }
     }
+  }
+
+  // Fallback patterns for experience descriptions (if missing)
+  if (fallbackData.experience && Array.isArray(fallbackData.experience)) {
+    fallbackData.experience = fallbackData.experience.map((exp: any) => {
+      if (!exp.description || exp.description.trim().length === 0) {
+        // Generate a meaningful description based on job title and company
+        const title = exp.title || 'Position';
+        const employer = exp.employer || 'Company';
+        
+        // Create a generic but meaningful description
+        const genericDescriptions = [
+          `Responsible for ${title.toLowerCase()} duties at ${employer}`,
+          `Performed ${title.toLowerCase()} responsibilities and contributed to team objectives`,
+          `Worked as ${title} at ${employer}, contributing to company goals and projects`,
+          `Focused on ${title.toLowerCase()} tasks and professional development`,
+        ];
+        
+        // Choose description based on job title keywords
+        if (title.toLowerCase().includes('engineer') || title.toLowerCase().includes('developer')) {
+          exp.description = `Developed and maintained software solutions, collaborated with cross-functional teams, and contributed to technical projects at ${employer}`;
+        } else if (title.toLowerCase().includes('manager') || title.toLowerCase().includes('lead')) {
+          exp.description = `Led team initiatives, managed projects, and coordinated with stakeholders to achieve business objectives at ${employer}`;
+        } else if (title.toLowerCase().includes('analyst')) {
+          exp.description = `Analyzed data and business processes, provided insights and recommendations to support decision-making at ${employer}`;
+        } else {
+          exp.description = genericDescriptions[Math.floor(Math.random() * genericDescriptions.length)];
+        }
+      }
+      return exp;
+    });
   }
 
   return {

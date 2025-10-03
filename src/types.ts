@@ -3,6 +3,7 @@ export interface Env {
   AI: Ai;
   WORKER_TYPE?: string;
   ENVIRONMENT?: string;
+  RESUME_DB?: D1Database; // Add D1 database binding
 }
 
 // Skill type definitions based on schema

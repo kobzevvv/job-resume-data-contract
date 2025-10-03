@@ -52,7 +52,13 @@ Processes resume with streaming response format for long-running operations.
 
 Processes multiple resumes in a single request with configurable concurrency.
 
-### 4. Health Check
+### 4. Show Raw Text Resume
+
+**POST** `/show_raw_text_resume`
+
+Displays the raw resume text that was submitted. Useful for debugging and verification.
+
+### 5. Health Check
 
 **GET** `/health`
 
@@ -61,6 +67,37 @@ Check API status and availability.
 ---
 
 ## 📝 Request Format
+
+### Show Raw Text Resume Request
+
+```json
+{
+  "resume_text": "string (required, the resume text to display)"
+}
+```
+
+#### Required Fields
+
+- **`resume_text`** (string, required)
+  - The raw resume text to display
+  - No minimum length requirement
+  - Returns the exact text that was submitted
+
+#### Response Format
+
+```json
+{
+  "success": true,
+  "raw_text": "John Doe\nSoftware Developer\n...",
+  "text_length": 138,
+  "processing_time_ms": 0,
+  "metadata": {
+    "worker_version": "1.0.0",
+    "timestamp": "2025-09-28T18:52:20.485Z",
+    "endpoint": "show_raw_text_resume"
+  }
+}
+```
 
 ### Process Resume Request
 

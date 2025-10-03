@@ -1,16 +1,5 @@
-import {
-  Env,
-  ProcessResumeRequest,
-  ProcessResumeResponse,
-  ProcessResumeStreamRequest,
-  ProcessResumeStreamResponse,
-  ProcessResumeBatchRequest,
-  ProcessResumeBatchResponse,
-  BatchResumeResult,
-  HealthResponse,
-  ResumeData,
-  PartialResumeData,
-} from './types';
+import { Env } from './types';
+import { DatabaseLogger } from './database-logger';
 import { processResumeWithAI } from './ai-processor';
 import { validateResumeData } from './validator';
 import {
@@ -24,9 +13,19 @@ import {
   validateRequestSize,
   getRequestMetadata,
   sanitizeForLog,
-  checkRateLimit,
-  cleanupRateLimit,
 } from './utils';
+import {
+  ProcessResumeRequest,
+  ProcessResumeResponse,
+  ProcessResumeStreamRequest,
+  ProcessResumeStreamResponse,
+  ProcessResumeBatchRequest,
+  ProcessResumeBatchResponse,
+  BatchResumeResult,
+  HealthResponse,
+  ResumeData,
+  PartialResumeData,
+} from './types';
 
 // Worker version for tracking
 const WORKER_VERSION = '1.0.0';
@@ -55,13 +54,6 @@ export default {
         request.headers.get('cf-ray') ||
         request.headers.get('cf-connecting-ip') ||
         'unknown';
-      if (!checkRateLimit(clientId)) {
-        return createErrorResponse(
-          429,
-          'RATE_LIMIT_EXCEEDED',
-          'Too many requests'
-        );
-      }
 
       // Log incoming request
       logEvent('info', 'Incoming request', {
@@ -84,6 +76,9 @@ export default {
 
         case '/process-resume-batch':
           return await handleProcessResumeBatch(request, env);
+
+        case '/analytics':
+          return await handleAnalytics(request, env);
 
         default:
           return createErrorResponse(
@@ -116,7 +111,7 @@ export default {
     env: Env,
     ctx: ExecutionContext
   ): Promise<void> {
-    ctx.waitUntil(performScheduledCleanup());
+    ctx.waitUntil(performScheduledCleanup(env));
   },
 };
 
@@ -146,6 +141,7 @@ async function handleHealth(request: Request, env: Env): Promise<Response> {
         '/process-resume',
         '/process-resume-stream',
         '/process-resume-batch',
+        '/analytics',
       ],
       ai_status: aiStatus,
     };
@@ -164,6 +160,7 @@ async function handleHealth(request: Request, env: Env): Promise<Response> {
         '/process-resume',
         '/process-resume-stream',
         '/process-resume-batch',
+        '/analytics',
       ],
     };
 
@@ -182,6 +179,8 @@ async function handleProcessResume(
   env: Env
 ): Promise<Response> {
   const getElapsed = measureTime();
+  const requestId = crypto.randomUUID();
+  const logger = new DatabaseLogger(env);
 
   try {
     // Validate request method
@@ -266,6 +265,19 @@ async function handleProcessResume(
     );
 
     if (!aiResult.data) {
+      // Log error to database
+      await logger
+        .logError({
+          requestId,
+          timestamp: new Date().toISOString(),
+          errorCode: 'AI_PROCESSING_FAILED',
+          errorMessage: 'Failed to extract resume data with AI',
+          endpoint: '/process-resume',
+        })
+        .catch(() => {
+          // Silent fail - don't log logging failures to console
+        });
+
       return createErrorResponse(
         422,
         'AI_PROCESSING_FAILED',
@@ -337,6 +349,7 @@ async function handleProcessResume(
 
     // Log completion
     logEvent('info', 'Resume processing completed', {
+      request_id: requestId,
       success: response.success,
       processing_time_ms: response.processing_time_ms,
       errors_count: response.errors.length,
@@ -344,13 +357,60 @@ async function handleProcessResume(
       data_extracted: response.data !== null,
     });
 
+    // Log to database
+    const logPayload = {
+      requestId,
+      method: request.method,
+      endpoint: '/process-resume',
+      inputType: 'text',
+      inputSize: requestData.resume_text.length,
+      language,
+      success: response.success,
+      processingTimeMs: response.processing_time_ms,
+      extractedFieldsCount: response.data
+        ? Object.keys(response.data).length
+        : 0,
+      validationErrorsCount: response.errors.length,
+      partialFieldsCount: response.partial_fields?.length || 0,
+      errors: response.errors,
+      unmappedFields: response.unmapped_fields,
+      metadata: response.metadata,
+    };
+
+    // Log to database asynchronously (don't await to avoid blocking response)
+    logger
+      .logRequestSimple(requestId, '/process-resume', logPayload)
+      .catch(error => {
+        console.error('Database logging failed:', {
+          requestId,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        // Silent fail - logging failures should not affect the main request
+      });
+
     return createSuccessResponse(response);
   } catch (error) {
     logEvent('error', 'Resume processing failed', {
+      request_id: requestId,
       error: error instanceof Error ? error.message : 'Unknown error',
       stack: error instanceof Error ? error.stack : undefined,
       processing_time_ms: getElapsed(),
     });
+
+    // Log error to database
+    await logger
+      .logError({
+        requestId,
+        timestamp: new Date().toISOString(),
+        errorCode: 'INTERNAL_ERROR',
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        ...(error instanceof Error &&
+          error.stack && { stackTrace: error.stack }),
+        endpoint: '/process-resume',
+      })
+      .catch(() => {
+        // Silent fail - don't compound errors
+      });
 
     const response: ProcessResumeResponse = {
       success: false,
@@ -635,13 +695,35 @@ async function handleProcessResumeBatch(
 }
 
 /**
+ * Analytics endpoint - provides usage statistics
+ */
+async function handleAnalytics(request: Request, env: Env): Promise<Response> {
+  try {
+    const logger = new DatabaseLogger(env);
+    const analytics = await logger.getAnalytics();
+
+    return new Response(JSON.stringify(analytics), {
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    return createErrorResponse(
+      500,
+      'ANALYTICS_ERROR',
+      'Failed to retrieve analytics data'
+    );
+  }
+}
+
+/**
  * Scheduled cleanup tasks
  */
-async function performScheduledCleanup(): Promise<void> {
+async function performScheduledCleanup(env?: Env): Promise<void> {
   try {
-    // Cleanup rate limiting data
-    cleanupRateLimit();
-
+    logEvent('info', 'Starting scheduled cleanup');
+    if (env?.RESUME_DB) {
+      const logger = new DatabaseLogger(env);
+      await logger.cleanupOldLogs();
+    }
     logEvent('info', 'Scheduled cleanup completed');
   } catch (error) {
     logEvent('error', 'Scheduled cleanup failed', {

@@ -1,0 +1,19 @@
+{
+  "input_type": "pdf",
+  "resume_pdf": {
+    "data": "[BASE64_DATA_53KB]",
+    "filename": "Машин Георгий Павлович.pdf",
+    "content_type": "application/pdf"
+  },
+  "language": "en",
+  "pdf_options": {
+    "extract_images": false,
+    "preserve_formatting": true,
+    "ocr_fallback": false
+  },
+  "options": {
+    "include_unmapped": true,
+    "strict_validation": false,
+    "flexible_validation": true
+  }
+}

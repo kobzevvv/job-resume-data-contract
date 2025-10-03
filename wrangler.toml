@@ -4,6 +4,7 @@ compatibility_date = "2024-09-01"
 
 # Increase payload size limit for PDF processing
 [limits]
+cpu_ms = 50000
 max_payload_size = "100KB"
 
 [vars]

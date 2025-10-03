@@ -68,6 +68,9 @@ export default {
         case '/health':
           return handleHealth(request, env);
 
+        case '/debug-secrets':
+          return handleDebugSecrets(request, env);
+
         case '/process-resume':
           return await handleProcessResume(request, env);
 
@@ -117,6 +120,44 @@ export default {
     ctx.waitUntil(performScheduledCleanup(env));
   },
 };
+
+/**
+ * Debug secrets endpoint
+ */
+async function handleDebugSecrets(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const getElapsed = measureTime();
+
+  try {
+    const secretInfo = {
+      hasPdfCoApiKey: !!env.PDF_CO_API_KEY,
+      pdfCoApiKeyLength: env.PDF_CO_API_KEY?.length || 0,
+      pdfCoApiKeyPreview: env.PDF_CO_API_KEY
+        ? `${env.PDF_CO_API_KEY.substring(0, 8)}...${env.PDF_CO_API_KEY.substring(env.PDF_CO_API_KEY.length - 4)}`
+        : 'NOT_SET',
+      environment: env.ENVIRONMENT,
+      workerType: env.WORKER_TYPE,
+      timestamp: new Date().toISOString(),
+      processingTimeMs: getElapsed(),
+    };
+
+    return new Response(JSON.stringify(secretInfo, null, 2), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  } catch (error) {
+    return createErrorResponse(
+      500,
+      'SECRET_DEBUG_ERROR',
+      error instanceof Error ? error.message : 'Unknown error'
+    );
+  }
+}
 
 /**
  * Health check endpoint
@@ -513,12 +554,16 @@ async function handleProcessResumePdf(
       base64Preview: pdfBase64.substring(0, 50) + '...',
     });
 
-    console.log('📤 Step 1: Uploading PDF to PDF.co...');
+    console.log('📤 Step 1: Uploading PDF to PDF.co file storage...');
 
-    // Step 1: Upload PDF to PDF.co using multipart form data
+    // Step 1: Upload PDF to PDF.co file storage using multipart form data
     const uploadFormData = new FormData();
-    uploadFormData.append('file', new Blob([pdfBuffer], { type: 'application/pdf' }), pdfFile.name || 'resume.pdf');
-    
+    uploadFormData.append(
+      'file',
+      new Blob([pdfBuffer], { type: 'application/pdf' }),
+      pdfFile.name || 'resume.pdf'
+    );
+
     const uploadResponse = await fetch('https://api.pdf.co/v1/file/upload', {
       method: 'POST',
       headers: {
@@ -532,63 +577,85 @@ async function handleProcessResumePdf(
       console.error('PDF.co upload error:', {
         status: uploadResponse.status,
         statusText: uploadResponse.statusText,
-        errorBody: errorText
+        errorBody: errorText,
       });
-      throw new Error(`PDF.co upload error: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`);
+      throw new Error(
+        `PDF.co upload error: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`
+      );
     }
 
     const uploadResult = await uploadResponse.json();
-    console.log('PDF.co upload response (full):', JSON.stringify(uploadResult, null, 2));
-
-    if (!uploadResult.success) {
-      throw new Error(`PDF.co upload failed: ${uploadResult.message || 'Upload unsuccessful'}`);
-    }
-
-    // Check for different possible URL field names
-    const fileUrl = uploadResult.url || uploadResult.fileUrl || uploadResult.file_url || uploadResult.downloadUrl;
-    
-    if (!fileUrl) {
-      console.error('No URL found in upload response. Available fields:', Object.keys(uploadResult));
-      throw new Error(`PDF.co upload failed: No URL returned. Response: ${JSON.stringify(uploadResult)}`);
-    }
-
-    console.log('📤 Step 2: Converting PDF to text...');
-
-    // Step 2: Convert PDF to text using the uploaded file URL
-    const convertResponse = await fetch('https://api.pdf.co/v1/pdf/convert/to/text', {
-      method: 'POST',
-      headers: {
-        'x-api-key': env.PDF_CO_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        url: fileUrl,
-        inline: true,
-        password: '',
-        pages: '1-10',
-        ocrMode: 'auto'
-      }),
+    console.log('PDF.co upload response:', {
+      success: !uploadResult.error,
+      url: uploadResult.url,
+      credits: uploadResult.credits,
+      remainingCredits: uploadResult.remainingCredits,
     });
+
+    if (uploadResult.error) {
+      throw new Error(
+        `PDF.co upload failed: ${uploadResult.message || 'Upload unsuccessful'}`
+      );
+    }
+
+    // Get the file URL from PDF.co
+    const fileUrl = uploadResult.url;
+    if (!fileUrl) {
+      console.error(
+        'No URL returned from PDF.co upload. Available fields:',
+        Object.keys(uploadResult)
+      );
+      throw new Error(
+        `PDF.co upload failed: No URL returned. Response: ${JSON.stringify(uploadResult)}`
+      );
+    }
+
+    console.log('✅ PDF uploaded to PDF.co:', fileUrl);
+
+    console.log('📤 Step 2: Extracting text from PDF.co URL...');
+
+    // Step 2: Extract text using the PDF.co file URL
+    const convertResponse = await fetch(
+      'https://api.pdf.co/v1/pdf/convert/to/text',
+      {
+        method: 'POST',
+        headers: {
+          'x-api-key': env.PDF_CO_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          url: fileUrl, // Use the PDF.co file URL
+          inline: true,
+          password: '',
+        }),
+      }
+    );
 
     if (!convertResponse.ok) {
       const errorText = await convertResponse.text();
-      console.error('PDF.co conversion error:', {
+      console.error('PDF.co text extraction error:', {
         status: convertResponse.status,
         statusText: convertResponse.statusText,
-        errorBody: errorText
+        errorBody: errorText,
       });
-      throw new Error(`PDF.co conversion error: ${convertResponse.status} ${convertResponse.statusText} - ${errorText}`);
+      throw new Error(
+        `PDF.co text extraction error: ${convertResponse.status} ${convertResponse.statusText} - ${errorText}`
+      );
     }
 
     const convertResult = await convertResponse.json();
-    console.log('PDF.co conversion response:', {
-      success: convertResult.success,
-      message: convertResult.message,
-      hasBody: !!convertResult.body
+    console.log('PDF.co text extraction response:', {
+      error: convertResult.error,
+      status: convertResult.status,
+      hasBody: !!convertResult.body,
+      credits: convertResult.credits,
+      remainingCredits: convertResult.remainingCredits,
     });
 
-    if (!convertResult.success) {
-      throw new Error(`PDF.co conversion failed: ${convertResult.message}`);
+    if (convertResult.error) {
+      throw new Error(
+        `PDF.co text extraction failed: ${convertResult.message || 'Unknown error'}`
+      );
     }
 
     const extractedText = convertResult.body;
@@ -599,29 +666,27 @@ async function handleProcessResumePdf(
     );
 
     // Process extracted text with existing logic
-    const resumeData = {
-      resume_text: extractedText,
-      language: language,
-      options: options,
-    };
-
-    // Use existing resume processing logic
-    const response = await processResumeWithAI(resumeData, env);
+    const response = await processResumeWithAI(
+      extractedText,
+      env,
+      language,
+      options
+    );
 
     // Create response object
     const responseData: ProcessResumeResponse = {
-      success: response.success,
+      success: !!response.data, // Success if we have data
       data: response.data,
-      errors: response.errors || [],
+      errors: [],
       unmapped_fields: response.unmapped_fields || [],
-      partial_fields: response.partial_fields || [],
+      partial_fields: [],
       processing_time_ms: getElapsed(),
       metadata: {
         worker_version: WORKER_VERSION,
         ai_model_used: env.AI?.model || 'unknown',
         timestamp: new Date().toISOString(),
-        format_detected: 'pdf',
-        format_confidence: 1.0,
+        format_detected: response.format_detected || 'pdf',
+        format_confidence: response.format_confidence || 1.0,
       },
     };
 

@@ -513,49 +513,11 @@ async function handleProcessResumePdf(
       base64Preview: pdfBase64.substring(0, 50) + '...',
     });
 
-    console.log('📤 Step 1: Uploading PDF to PDF.co...');
+    console.log('📤 Trying direct PDF conversion with data URI...');
 
-    // Step 1: Upload PDF to PDF.co
-    const uploadResponse = await fetch('https://api.pdf.co/v1/file/upload/base64', {
-      method: 'POST',
-      headers: {
-        'x-api-key': env.PDF_CO_API_KEY,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        file: pdfBase64,
-        fileName: pdfFile.name || 'resume.pdf'
-      }),
-    });
-
-    if (!uploadResponse.ok) {
-      const errorText = await uploadResponse.text();
-      console.error('PDF.co upload error:', {
-        status: uploadResponse.status,
-        statusText: uploadResponse.statusText,
-        errorBody: errorText
-      });
-      throw new Error(`PDF.co upload error: ${uploadResponse.status} ${uploadResponse.statusText} - ${errorText}`);
-    }
-
-    const uploadResult = await uploadResponse.json();
-    console.log('PDF.co upload response (full):', JSON.stringify(uploadResult, null, 2));
-
-    if (!uploadResult.success) {
-      throw new Error(`PDF.co upload failed: ${uploadResult.message || 'Upload unsuccessful'}`);
-    }
-
-    // Check for different possible URL field names
-    const fileUrl = uploadResult.url || uploadResult.fileUrl || uploadResult.file_url || uploadResult.downloadUrl;
+    // Try direct conversion with data URI format
+    const dataUri = `data:application/pdf;base64,${pdfBase64}`;
     
-    if (!fileUrl) {
-      console.error('No URL found in upload response. Available fields:', Object.keys(uploadResult));
-      throw new Error(`PDF.co upload failed: No URL returned. Response: ${JSON.stringify(uploadResult)}`);
-    }
-
-    console.log('📤 Step 2: Converting PDF to text...');
-
-    // Step 2: Convert PDF to text using the uploaded file URL
     const convertResponse = await fetch('https://api.pdf.co/v1/pdf/convert/to/text', {
       method: 'POST',
       headers: {
@@ -563,7 +525,7 @@ async function handleProcessResumePdf(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        url: fileUrl,
+        url: dataUri,
         inline: true,
         password: '',
         pages: '1-10',

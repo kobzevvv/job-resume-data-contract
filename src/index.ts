@@ -71,6 +71,9 @@ export default {
         case '/process-resume':
           return await handleProcessResume(request, env);
 
+        case '/process-resume-pdf':
+          return await handleProcessResumePdf(request, env);
+
         case '/process-resume-stream':
           return await handleProcessResumeStream(request, env);
 
@@ -441,6 +444,177 @@ async function handleProcessResume(
         'Content-Type': 'application/json',
         'Access-Control-Allow-Origin': '*',
       },
+    });
+  }
+}
+
+/**
+ * PDF resume processing endpoint
+ */
+async function handleProcessResumePdf(
+  request: Request,
+  env: Env
+): Promise<Response> {
+  const requestId = crypto.randomUUID();
+  const getElapsed = measureTime();
+  
+  try {
+    console.log('📄 Processing PDF resume:', requestId);
+    
+    // Parse form data
+    const formData = await request.formData();
+    const pdfFile = formData.get("pdf") as File;
+    const language = formData.get("language") as string || "en";
+    const options = {
+      flexible_validation: formData.get("flexible_validation") === "true",
+      strict_validation: formData.get("strict_validation") === "true"
+    };
+    
+    if (!pdfFile) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: "No PDF file provided",
+        request_id: requestId
+      }), {
+        status: 400,
+        headers: { 
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+    
+    console.log('📊 PDF file info:', {
+      name: pdfFile.name,
+      size: pdfFile.size,
+      type: pdfFile.type
+    });
+    
+    // Convert PDF to base64
+    const pdfBuffer = await pdfFile.arrayBuffer();
+    const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+    
+    console.log('📤 Sending PDF to PDF.co for text extraction...');
+    
+    // Send to PDF.co for text extraction
+    const pdfCoResponse = await fetch("https://api.pdf.co/v1/pdf/convert/to/text", {
+      method: "POST",
+      headers: {
+        "x-api-key": env.PDF_CO_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        file: pdfBase64,
+        inline: true,
+        password: "" // Add password if needed
+      })
+    });
+    
+    if (!pdfCoResponse.ok) {
+      throw new Error(`PDF.co API error: ${pdfCoResponse.status} ${pdfCoResponse.statusText}`);
+    }
+    
+    const pdfCoResult = await pdfCoResponse.json();
+    
+    if (!pdfCoResult.success) {
+      throw new Error(`PDF.co extraction failed: ${pdfCoResult.message}`);
+    }
+    
+    const extractedText = pdfCoResult.body;
+    console.log('✅ PDF text extracted successfully:', extractedText.length, 'characters');
+    
+    // Process extracted text with existing logic
+    const resumeData = {
+      resume_text: extractedText,
+      language: language,
+      options: options
+    };
+    
+    // Use existing resume processing logic
+    const response = await processResumeWithAI(resumeData, env);
+    
+    // Create response object
+    const responseData: ProcessResumeResponse = {
+      success: response.success,
+      data: response.data,
+      errors: response.errors || [],
+      unmapped_fields: response.unmapped_fields || [],
+      partial_fields: response.partial_fields || [],
+      processing_time_ms: getElapsed(),
+      metadata: {
+        worker_version: WORKER_VERSION,
+        ai_model_used: env.AI?.model || 'unknown',
+        timestamp: new Date().toISOString(),
+        format_detected: 'pdf',
+        format_confidence: 1.0
+      }
+    };
+    
+    // Initialize database logger
+    const logger = new DatabaseLogger(env);
+    
+    // Log to database with PDF info
+    const logPayload = {
+      requestId,
+      method: request.method,
+      endpoint: '/process-resume-pdf',
+      inputType: 'pdf',
+      inputSize: pdfFile.size,
+      inputPreview: `PDF: ${pdfFile.name} (${pdfFile.size} bytes)`,
+      language,
+      success: responseData.success,
+      processingTimeMs: responseData.processing_time_ms,
+      extractedFieldsCount: responseData.data ? Object.keys(responseData.data).length : 0,
+      validationErrorsCount: responseData.errors.length,
+      partialFieldsCount: responseData.partial_fields?.length || 0,
+      errors: responseData.errors,
+      unmappedFields: responseData.unmapped_fields,
+      metadata: responseData.metadata,
+      resumeData: responseData.data, // Complete structured resume JSON
+      pdfInfo: {
+        fileName: pdfFile.name,
+        fileSize: pdfFile.size,
+        fileType: pdfFile.type,
+        extractedTextLength: extractedText.length
+      }
+    };
+    
+    // Debug logging
+    console.log('DEBUG: PDF LogPayload structure:', {
+      requestId,
+      payloadKeys: Object.keys(logPayload),
+      hasResumeData: !!logPayload.resumeData,
+      resumeDataKeys: logPayload.resumeData ? Object.keys(logPayload.resumeData) : null,
+    });
+    
+    // Log to database
+    try {
+      await logger.logRequestSimple(requestId, '/process-resume-pdf', logPayload);
+      console.log('✅ Database logging completed successfully:', requestId);
+    } catch (error) {
+      console.error('❌ Database logging failed:', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
+    
+    return createSuccessResponse(responseData);
+    
+  } catch (error) {
+    console.error('❌ PDF processing failed:', error.message);
+    
+    return new Response(JSON.stringify({
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error',
+      request_id: requestId,
+      timestamp: new Date().toISOString()
+    }), {
+      status: 500,
+      headers: { 
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
     });
   }
 }

@@ -316,8 +316,13 @@ function isCIEnvironment() {
  */
 function shouldSkipInCI(filename) {
   // Skip Russian resume tests in CI due to processing time issues
-  if (isCIEnvironment() && (filename.includes('russian') || filename.includes('ru-'))) {
-    console.log(`⏭️  Skipping ${filename} in CI environment (processing time issues)`);
+  if (
+    isCIEnvironment() &&
+    (filename.includes('russian') || filename.includes('ru-'))
+  ) {
+    console.log(
+      `⏭️  Skipping ${filename} in CI environment (processing time issues)`
+    );
     return true;
   }
   return false;

@@ -364,6 +364,7 @@ async function handleProcessResume(
       endpoint: '/process-resume',
       inputType: 'text',
       inputSize: requestData.resume_text.length,
+      inputPreview: requestData.resume_text.substring(0, 200), // First 200 chars for identification
       language,
       success: response.success,
       processingTimeMs: response.processing_time_ms,
@@ -378,6 +379,14 @@ async function handleProcessResume(
       // Add the actual structured resume JSON output
       resumeData: response.data,
     };
+
+    // Debug: Log the payload structure
+    console.log('DEBUG: LogPayload structure:', {
+      requestId,
+      payloadKeys: Object.keys(logPayload),
+      hasResumeData: !!logPayload.resumeData,
+      resumeDataKeys: logPayload.resumeData ? Object.keys(logPayload.resumeData) : null,
+    });
 
     // Log to database asynchronously (don't await to avoid blocking response)
     logger
